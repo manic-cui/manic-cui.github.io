@@ -24,10 +24,10 @@ repository               : "manic-cui/manic-cui.github.io"
 author:
   # Biographic information
   avatar           : "profile.png"
-  name             : "Your Sidebar Name"
+  name             : "Manni Cui"
   pronouns         : # example: "she/her"  
   bio              : "Short biography for the left-hand sidebar"
-  location         : "Earth"
+  location         : "Hubei,China"
   employer         : "Huazhong University of Science and Technology"
   uri              : # URL
   email            : "u202413702@hust.edu.cn" 
