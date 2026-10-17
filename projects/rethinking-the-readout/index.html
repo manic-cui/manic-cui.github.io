@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Rethinking the Readout (NeurIPS 2026)</title>
-  <meta name="description" content="V-PVP replaces only the readout of a frozen video backbone with two streams over the patch velocity field, reaching 95.28 AUC on AIGVDBench. NeurIPS 2026.">
+  <meta name="description" content="V-PVP replaces only the readout of a frozen video backbone with two streams over the patch velocity field and reaches 95.28 AUC on AIGVDBench. NeurIPS 2026.">
   <meta property="og:title" content="Rethinking the Readout: Unlocking Video Backbones for AI-Generated Video Detection">
-  <meta property="og:description" content="V-PVP replaces only the readout of a frozen video backbone with two streams over the patch velocity field, reaching 95.28 AUC on AIGVDBench. NeurIPS 2026.">
+  <meta property="og:description" content="V-PVP replaces only the readout of a frozen video backbone with two streams over the patch velocity field and reaches 95.28 AUC on AIGVDBench. NeurIPS 2026.">
   <meta property="og:type" content="article">
   <meta property="og:image" content="https://manic-cui.github.io/projects/rethinking-the-readout/img/teaser.jpg">
   <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
@@ -14,7 +14,21 @@
 </head>
 <body>
   <nav class="back"><a href="../../index.html">← Manni Cui</a></nav>
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#motivation">Motivation</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#experiments">Experiments</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#bibtex">BibTeX</a></li>
+    </ol>
+  </nav>
+
   <header class="paper">
+    <span class="venue">NeurIPS 2026</span>
     <h1 class="paper-title">Rethinking the Readout: Unlocking Video Backbones for <span class="nw">AI-Generated</span> Video Detection</h1>
     <p class="authors">
         <span><a href="../../index.html">Manni Cui</a><sup>1,*</sup></span>
@@ -36,112 +50,378 @@
         <span><sup>4</sup>Vast Intelligence Lab</span>
     </p>
     <p class="notes"><span><sup>*</sup>Equal contribution</span><span><sup>†</sup>Corresponding author</span></p>
-    <p class="venue">NeurIPS 2026</p>
     <ul class="buttons">
       <li><a href="https://arxiv.org/pdf/2607.15321"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Paper</a></li>
       <li><a href="https://arxiv.org/abs/2607.15321"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>arXiv</a></li>
       <li><a href="https://github.com/manic-cui/Rethinking-the-readout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>Code</a></li>
       <li><a href="#bibtex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h4v4H7zM7 11c0 3-1 5-3 6M15 7h4v4h-4zM15 11c0 3-1 5-3 6"/></svg>BibTeX</a></li>
     </ul>
+    <p class="tldr">Video backbones are not weak at detecting AI-generated videos; their readout is. Replacing only the GAP/CLS readout with V-PVP lets a fully frozen VideoMAE reach 95.28 AUC on AIGVDBench.</p>
   </header>
 
   <main>
-    <section aria-label="Teaser">
+    <section class="first" aria-label="Teaser">
       <figure>
-        <div class="plate"><img src="img/teaser.jpg" alt="The readout is the bottleneck for AIGV detection: patch-level dynamics, global aggregation in video backbones, and what is lost." loading="lazy"></div>
+        <div class="plate "><img class="zoomable" src="img/teaser.jpg" alt="The readout is the bottleneck for AIGV detection: patch-level dynamics, global aggregation in video backbones, and what is lost." loading="lazy"></div>
         <figcaption><b class="n">Figure 1.</b> <strong>The readout is the bottleneck for AIGV detection.</strong> Left: AIGV detection relies on patch level temporal cues. Middle: Each colored cell represents a patch token, with color depth indicating activation strength. Standard video backbones aggregate these tokens into a single global vector via GAP or CLS, which suppresses patch level variations. Right: This collapse weakens local details and erases structured inter patch relations, leaving the bottleneck in the readout rather than in the backbone representation.</figcaption>
       </figure>
     </section>
 
+    <section id="glance" aria-label="Key results">
+    <ul class="glance">
+      <li><span class="num">95.28</span><span class="what">mga AUC on AIGVDBench (20 generators) with VideoMAE kept fully frozen</span></li>
+      <li><span class="num">+6.94</span><span class="what">AUC over end-to-end fine-tuning of the same VideoMAE with its standard readout (~87M trainable parameters)</span></li>
+      <li><span class="num">0.5<small>M</small></span><span class="what">trainable parameters in the new readout, roughly 0.57% of the backbone</span></li>
+    </ul>
+    </section>
+
     <section id="abstract" aria-labelledby="h-abs">
       <h2 id="h-abs">Abstract</h2>
-      <div class="prose abstract">
-        <p>AI-generated videos (AIGVs) typically contain subtle temporal artifacts that arise from inter-frame inconsistencies rather than within individual frames. A detector that captures such artifacts should therefore benefit from video pretrained backbones over image only ones. In practice, however, video backbones with standard global readouts often fail to outperform strong image pretrained probes on AIGV benchmarks. We attribute this gap to excessive spatiotemporal aggregation in the readout. Video pretrained backbones tend to compress each frame into a single global descriptor. This compression suppresses local patch level temporal dynamics and discards inter patch relations, which are precisely the cues that AIGV detection most reliably depends on. Based on this, we propose Velocity Gated Patch Velocity Profiling (V-PVP), a lightweight readout that replaces only the aggregation layer with two parallel streams over the patch velocity field, adding only about 0.5M trainable parameters. V-PVP serves as a general plug-and-play module that consistently improves performance across diverse video backbones under both end-to-end fine-tuning and linear probing settings. Our method reaches <strong>95.28</strong> AUC on AIGVDBench while keeping the backbone fully frozen. The results show that simply replacing the aggregation layer reactivates the temporal potential of frozen video backbones, restoring their advantage on AIGV detection. Code is available at <a href="https://github.com/manic-cui/Rethinking-the-readout">https://github.com/manic-cui/Rethinking-the-readout</a>.</p>
-      </div>
+      <div class="prose abstract"><p>AI-generated videos (AIGVs) typically contain subtle temporal artifacts that arise from inter-frame inconsistencies rather than within individual frames. A detector that captures such artifacts should therefore benefit from video pretrained backbones over image only ones. In practice, however, video backbones with standard global readouts often fail to outperform strong image pretrained probes on AIGV benchmarks. We attribute this gap to excessive spatiotemporal aggregation in the readout. Video pretrained backbones tend to compress each frame into a single global descriptor. This compression suppresses local patch level temporal dynamics and discards inter patch relations, which are precisely the cues that AIGV detection most reliably depends on. Based on this, we propose Velocity Gated Patch Velocity Profiling (V-PVP), a lightweight readout that replaces only the aggregation layer with two parallel streams over the patch velocity field, adding only about 0.5M trainable parameters. V-PVP serves as a general plug-and-play module that consistently improves performance across diverse video backbones under both end-to-end fine-tuning and linear probing settings. Our method reaches <strong>95.28</strong> AUC on AIGVDBench while keeping the backbone fully frozen. The results show that simply replacing the aggregation layer reactivates the temporal potential of frozen video backbones, restoring their advantage on AIGV detection. Code is available at <a href="https://github.com/manic-cui/Rethinking-the-readout">https://github.com/manic-cui/Rethinking-the-readout</a>.</p></div>
+      <h3>Contributions</h3>
+      <ol class="contrib">
+        <li>We identify the readout as an important bottleneck of video backbones in AIGV detection, and provide quantitative evidence that standard aggregation discards two complementary forms of patch level evidence on which AIGV detection relies.</li>
+        <li>We propose V-PVP, a readout that addresses the two losses with two parallel streams over the patch velocity field, unlocking the perceptual potential of video backbones for AIGV detection.</li>
+        <li>Across multiple video backbones and benchmarks, V-PVP consistently surpasses same backbone readouts to a large extent. With VideoMAE as the backbone, our method reaches <strong>95.28</strong> AUC on AIGVDBench while keeping the backbone fully frozen.</li>
+      </ol>
     </section>
 
     <section id="motivation" aria-labelledby="h-mot">
-      <h2 id="h-mot">Motivation</h2>
-      <figure>
-        <div class="plate pair">
-          <div><img src="img/fig2a.png" alt="Density of the low-rank coherence of the patch velocity matrix for real and fake videos; Cohen's d = 0.640." loading="lazy">
-            <p class="sub">(a) Loss 1. Spectral condition number of the patch velocity matrix <i class="m">V</i><sub><i class="m">t</i></sub> ∈ ℝ<sup><i class="m">P</i>×<i class="m">D</i></sup>, defined as <i class="m">κ</i><sub>spec</sub> = log <i class="m">σ</i><sub>1</sub> − log <i class="m">σ</i><sub>10</sub>. Generated videos are systematically higher, with Cohen's <i class="m">d</i> ≈ 0.64. This signal is no longer measurable after aggregation.</p></div>
-          <div><img src="img/fig2b.png" alt="Per-channel velocity energy for real and fake videos before and after pooling." loading="lazy">
-            <p class="sub">(b) Loss 2. Per channel velocity energies, normalized so that the real video mean equals 1. Pre pool, real and fake energies differ by 1.00 vs 0.80 with Cohen's <i class="m">d</i> ≈ 0.69. After pooling, the gap shrinks to 1.00 vs 0.88 with <i class="m">d</i> ≈ 0.41.</p></div>
+      <h2 id="h-mot">Why do video backbones fall short?</h2>
+      <p class="takeaway">The readout, not the backbone, is where the temporal evidence is lost.</p>
+      <div class="prose">
+        <p>A natural choice for exploiting temporal signals is video backbones pretrained on large scale video datasets, since they are designed to model temporal dynamics across frames. Recent benchmarks, however, suggest the opposite. Several detectors built on image pretrained encoders have been shown to surpass video backbones with their default readouts on standard AIGV detection benchmarks. This suggests that the temporal advantage of video backbones is not being fully realized, and that the bottleneck likely lies elsewhere in the pipeline.</p>
+        <p>A standard video backbone takes an input clip and outputs a tensor of patch tokens of shape <span class="m">P × T × D</span>, where <span class="m">P</span> is the number of spatial patches per frame, <span class="m">T</span> is the temporal length, and <span class="m">D</span> is the channel dimension. These tokens carry rich spatiotemporal information, but downstream classification heads expect a single fixed length vector. The readout layer is what closes this gap. Common choices, such as global average pooling, a learnable CLS token, or fixed query attention pooling, differ in how the aggregation weights are computed but share the same operation, namely a joint spatiotemporal and semantic aggregation over patch tokens.</p>
+        <p>This kind of aggregation is the right design for tasks that rely on a stable global understanding, such as action recognition, where local frame to frame fluctuations and inter patch differences are noise to be averaged out. AIGV detection has the opposite need. The discriminative signal between real and generated videos lives precisely in those small frame to frame variations within each patch and in the relations among patches. Standard readouts smooth out the former and dissolve the latter in a single step, leaving the pooled vector blind to the very cues that AIGV detection most reliably depends on. We formalize this mismatch as two complementary losses, namely the loss of inter patch relations and the dilution of per channel velocity magnitudes.</p>
+        <p>To make this concrete, we focus on GAP as the simplest case and base the analysis on the patch velocity</p>
+      </div>
+      <div class="eq"><img src="eq/velocity.svg" alt="v_t^(p) = z_{t+1}^(p) - z_t^(p)" style="--w:135px" loading="lazy"></div>
+      <div class="prose">
+        <p>where <span class="m">z<span class="ss"><span>(p)</span><span>t</span></span> &#8712; &#8477;<sup>D</sup></span> denotes the <span class="m">p</span>-th patch token of frame <span class="m">t</span>. Applying GAP across patches and then taking a temporal difference is equivalent to averaging the patch velocities,</p>
+      </div>
+      <div class="eq"><picture><source media="(max-width: 760px)" srcset="eq/gap-m.svg"><img src="eq/gap.svg" alt="Delta z-bar_t = (1/P) sum_p v_t^(p)" style="--w:432px;--wm:238px" loading="lazy"></picture></div>
+      <div class="prose">
+        <p>The patch axis collapses from <span class="m">P × D</span> to <span class="m"><span class="r">1</span> × D</span> in a single step, and an analogous collapse happens along the temporal axis. This collapse erases inter patch relations and cancels velocity components across channels, the two effects we analyze below.</p>
+      </div>
+      <div class="duo">
+        <div>
+          <h4>Loss 1: inter patch relations are erased</h4>
+          <div class="sub-fig"><img class="zoomable" src="img/fig2a.png" alt="Density of the spectral condition number of the patch velocity matrix for real and generated videos (Cohen's d = 0.64)." loading="lazy"></div>
+          <p>Inter patch relations capture how different patches co-vary across frames. They live in the covariance structure across the patch dimension and become undefined once the patches are aggregated into a single vector. To probe whether real and generated videos differ in this structure, we measure the spectral condition number of the patch velocity matrix <span class="m">V<sub>t</sub></span> at each frame, which tests whether inter patch motion admits a low rank decomposition, that is, whether all patches move homogeneously. As shown in Figure 2(a), generated videos consistently exhibit more homogeneous inter patch motion than real videos, reflecting their different generation processes. This pattern is a reliable cue for distinguishing real from fake, yet it lives in the patch dimension and disappears the moment GAP collapses it.</p>
+          <p class="subcap">(a) Spectral condition number of the patch velocity matrix <span class="m">V<sub>t</sub> &#8712; &#8477;<sup>P×D</sup></span>, defined as <span class="m">κ<sub>spec</sub> = log σ<sub><span class="r">1</span></sub> − log σ<sub><span class="r">10</span></sub></span>. Generated videos are systematically higher, with Cohen's <span class="m">d</span> ≈ 0.64. This signal is no longer measurable after aggregation.</p>
         </div>
-        <figcaption><b class="n">Figure 2.</b> <strong>The readout is the bottleneck.</strong> Real vs fake statistics on all 63k AIGVDBench test videos.</figcaption>
-      </figure>
+        <div>
+          <h4>Loss 2: per channel velocity magnitudes are diluted</h4>
+          <div class="sub-fig"><img class="zoomable" src="img/fig2b.png" alt="Per-channel velocity energy of real and generated videos before and after pooling." loading="lazy"></div>
+          <p>Patch velocity vectors typically point in different directions across patches, so when the linear average is taken, components with opposite signs cancel along each channel. By Jensen's inequality, the post-pool magnitude is bounded by the pre-pool average,</p>
+          <div class="eq"><img src="eq/jensen.svg" alt="(1/P) sum_p ||v_t^(p)||_2 &gt;= ||(1/P) sum_p v_t^(p)||_2" style="--w:354px" loading="lazy"></div>
+          <p>with equality only when all <span class="m">v<span class="ss"><span>(p)</span><span>t</span></span></span> are colinear and same-signed. As shown in Figure 2(b), pooling retains only a small fraction of the per channel energy, and the gap between real and generated videos shrinks substantially after pooling. Unlike Loss 1, the magnitude pattern still exists in the pooled vector, but common readouts can no longer reliably extract it.</p>
+          <p class="subcap">(b) Per channel velocity energies, normalized so that the real video mean equals 1. Pre pool, real and fake energies differ by 1.00 vs 0.80 with Cohen's <span class="m">d</span> ≈ 0.69. After pooling, the gap shrinks to 1.00 vs 0.88 with <span class="m">d</span> ≈ 0.41.</p>
+        </div>
+      </div>
+      <figure style="margin-top:.2rem"><figcaption><b class="n">Figure 2.</b> <strong>The readout is the bottleneck.</strong> Real vs fake statistics on all 63k AIGVDBench test videos.</figcaption></figure>
+      <div class="prose" style="margin-top:1.4rem">
+        <p>The two losses share the same source. The standard readout is designed for joint spatiotemporal and semantic aggregation, which by its very design erases inter patch structure and dilutes channel level magnitudes. Recovering both requires intervening at the readout rather than within the backbone.</p>
+      </div>
     </section>
 
     <section id="method" aria-labelledby="h-method">
-      <h2 id="h-method">Method</h2>
+      <h2 id="h-method">Method: V-PVP</h2>
+      <p class="takeaway">Keep the backbone frozen and replace only the readout with two parallel streams over the patch velocity field.</p>
       <div class="prose">
-        <p>Figure 3 shows the overall design of V-PVP. We keep the backbone fully frozen and replace only the readout with two parallel streams over the patch velocity field {<i class="m">v</i><sub><i class="m">t</i></sub><sup>(<i class="m">p</i>)</sup>}. A velocity gated learnable aggregation <i class="m">z̃</i><sub><i class="m">t</i></sub> addresses Loss 1 by carrying inter patch heterogeneity into the pooled output, and a channel faithful velocity stream <i class="m">r</i><sub><i class="m">t</i></sub> addresses Loss 2 by preserving per channel magnitudes through an element wise nonlinearity. The two streams are projected independently, concatenated at each time step, and passed to a shallow temporal head.</p>
+        <p>Figure 3 shows the overall design of V-PVP. We keep the backbone fully frozen and replace only the readout with two parallel streams over the patch velocity field <span class="m">{v<span class="ss"><span>(p)</span><span>t</span></span>}</span>. A velocity gated learnable aggregation <span class="m">z&#771;<sub>t</sub></span> addresses Loss 1 by carrying inter patch heterogeneity into the pooled output, and a channel faithful velocity stream <span class="m">r<sub>t</sub></span> addresses Loss 2 by preserving per channel magnitudes through an element wise nonlinearity. The two streams are projected independently, concatenated at each time step, and passed to a shallow temporal head.</p>
       </div>
       <figure>
-        <div class="plate"><a href="img/architecture.png" target="_blank" rel="noopener" aria-label="Open full-size image"><img src="img/architecture.png" alt="Overall architecture of V-PVP: frozen video backbone, patch velocity, velocity-gated learnable aggregation, channel-faithful velocity profiling, concatenation and temporal head." loading="lazy"></a></div>
+        <div class="plate "><img class="zoomable" src="img/architecture.png" alt="Overall architecture of V-PVP: a frozen video backbone, patch velocities, a velocity-gated learnable aggregation stream, a channel-faithful velocity profiling stream, concatenation and a temporal head." loading="lazy"></div>
         <figcaption><b class="n">Figure 3.</b> Overall architecture of V-PVP.</figcaption>
       </figure>
+
+      <h3>Velocity-gated learnable aggregation <span class="m">z&#771;<sub>t</sub></span></h3>
+      <div class="prose">
+        <p>Let <span class="m">z<span class="ss"><span>(p)</span><span>t</span></span></span> be the <span class="m">p</span>-th patch token of frame <span class="m">t</span> and <span class="m">v<span class="ss"><span>(p)</span><span>t</span></span></span> <span class="m">= z<span class="ss"><span>(p)</span><span>t+<span class="r">1</span></span></span> − z<span class="ss"><span>(p)</span><span>t</span></span></span> the patch velocity. A small scoring network produces a per patch score on the fly, and a softmax converts scores into aggregation weights,</p>
+      </div>
+      <div class="eq"><picture><source media="(max-width: 760px)" srcset="eq/vgap-m.svg"><img src="eq/vgap.svg" alt="s_t^(p) = MLP([z_t^(p), ||v_t^(p)||_2]), alpha_t^(p) = softmax_p(s_t^(p)), z-tilde_t = sum_p alpha_t^(p) z_t^(p)" style="--w:562px;--wm:226px" loading="lazy"></picture></div>
+      <div class="prose">
+        <p>Standard readouts collapse the patch dimension with weights that are fixed once training ends, applying the same weighting regardless of which patches are anomalous. <span class="m">z&#771;<sub>t</sub></span> differs in two respects. First, the learned <span class="m">α<span class="ss"><span>(p)</span><span>t</span></span></span> can vary by orders of magnitude across patches within a single frame, whereas the uniform <span class="m"><span class="r">1</span>/P</span> of GAP dilutes every patch equally. Second, <span class="m">α<span class="ss"><span>(p)</span><span>t</span></span></span> is computed from the current video's <span class="m">(z<span class="ss"><span>(p)</span><span>t</span></span>, &#8214;v<span class="ss"><span>(p)</span><span>t</span></span>&#8214;<sub><span class="r">2</span></sub>)</span>, so the spatial distribution of weights itself encodes inter patch heterogeneity. This weight pattern takes different shapes across videos and propagates into the channel pattern of <span class="m">z&#771;<sub>t</sub></span> through the weighted sum. In effect, the <span class="m">P</span>-dimensional weight vector <span class="m">α<sub>t</sub></span> acts as a per video carrier of the inter patch structure that motivated Loss 1, allowing <span class="m">z&#771;<sub>t</sub></span> to retain a discriminative signature of this structure even after collapsing the patch axis.</p>
+        <p>The scoring network receives <span class="m">&#8214;v<span class="ss"><span>(p)</span><span>t</span></span>&#8214;<sub><span class="r">2</span></sub></span> explicitly alongside <span class="m">z<span class="ss"><span>(p)</span><span>t</span></span></span>. Scoring on appearance alone reduces the aggregator to a semantic selector that overfits to the spatial fingerprint of the training generator (Table 3b). Conditioning on velocity magnitude anchors the definition of “anomalous” to a generator invariant physical quantity and prevents fingerprint memorization.</p>
+      </div>
+
+      <h3>Channel-faithful velocity stream <span class="m">r<sub>t</sub></span></h3>
+      <div class="prose">
+        <p>Although <span class="m">z&#771;<sub>t</sub></span> addresses Loss 1 by introducing input-adaptive patch weighting, it remains a signed linear aggregation over patch-level signals. Velocity components from different patches can still cancel on each channel when they have opposite signs, so a signed linear readout cannot guarantee faithful preservation of per-channel velocity magnitudes. Loss 2 therefore requires a nonlinear operation before spatial aggregation.</p>
+        <p>The <span class="m">r<sub>t</sub></span> stream avoids this by applying an element wise absolute value before the spatial sum,</p>
+      </div>
+      <div class="eq"><img src="eq/rt.svg" alt="r_t = (1/P) sum_p |v_t^(p)|" style="--w:128px" loading="lazy"></div>
+      <div class="prose">
+        <p>Moving the nonlinearity inside the sum prevents opposite signed components from cancelling, so per channel velocity magnitude is faithfully preserved. The resulting vector encodes both how much anomalous activity exists and which channels it occupies.</p>
+        <p>We use the mean rather than the max because channel level anomalies in generated videos typically appear as weak signals distributed across many patches. The mean accumulates these diffuse contributions and is robust to isolated noise.</p>
+      </div>
+
+      <h3>Two-stream fusion and sequence head</h3>
+      <div class="prose">
+        <p>At each frame pair, <span class="m">z&#771;<sub>t</sub></span> and <span class="m">r<sub>t</sub></span> each produce a <span class="m">D</span>-dimensional vector with very different statistics. <span class="m">z&#771;<sub>t</sub></span> inherits the near zero mean signed distribution of post LayerNorm features, while <span class="m">r<sub>t</sub></span> is strictly non-negative and typically an order of magnitude smaller. A shared projection cannot rescale both. We apply two independent linear maps to <span class="m">H/<span class="r">2</span></span> each and concatenate along the channel axis at each time step,</p>
+      </div>
+      <div class="eq"><img src="eq/fusion.svg" alt="u_t = W_z z-tilde_t, w_t = W_r r_t, x_t = [u_t; w_t]" style="--w:353px" loading="lazy"></div>
+      <div class="prose">
+        <p>Splitting the channel budget keeps the two signals on a common scale before fusion, and bounds the readout at the 0.5M parameter level.</p>
+        <p>A short temporal convolutional head reads <span class="m">{x<sub>t</sub>}</span> into a single logit. Because <span class="m">u<sub>t</sub></span> and <span class="m">w<sub>t</sub></span> share the channel axis, every kernel position sees both signals at the same time step. A kernel size of three extends this to consecutive frame pairs, which matches the temporal scale of the inter frame inconsistencies V-PVP targets. A single anomalous transition is often not informative on its own, but a short window of them is. We then mean pool over time rather than learn a temporal attention, to avoid overfitting to the training generator's temporal position patterns.</p>
+        <p>The aggregator, the projections, and the head are trained from scratch. The backbone remains fully frozen.</p>
+      </div>
     </section>
 
-    <section id="results" aria-labelledby="h-res">
-      <h2 id="h-res">Results</h2>
+    <section id="experiments" aria-labelledby="h-exp">
+      <h2 id="h-exp">Experiments</h2>
+      <h3>Setup</h3>
+      <div class="prose">
+        <p><strong>Datasets and protocol.</strong> We evaluate V-PVP on two cross-generator benchmarks. <strong>AIGVDBench</strong> contains a split spanning 20 generators across T2V, I2V, and V2V tasks. We adopt its three-generator training protocol: OpenSora, CogVideoX1.5, and EasyAnimate serve as fake training sources. <strong>GenVidBench-143k</strong> adopts a cross-source protocol in which the training sources (Pika, VideoCrafterV2, ModelScope, T2V-Zero) and the test sources (MuseV, SVD, CogVideo, Mora) are fully disjoint. The primary metric is the mean per-generator AUC. Frames are sampled and preprocessed following the AIGVDBench protocol. The default backbone is VideoMAE pretrained on Kinetics-400 and kept fully frozen, with patch tokens extracted from the pre-final-norm position of the last transformer block.</p>
+        <p><strong>Baselines.</strong> We compare V-PVP against three families of baselines under the benchmark-specific cross-generator protocols. <strong>AI-generated image detection models</strong> classify each frame independently and aggregate by majority vote. <strong>AI-generated video detection models</strong> are designed specifically for AIGV detection and use their original temporal modeling heads. <strong>Video classification models</strong> are adapted by full-parameter fine-tuning on the same training set, so that the comparison reflects each backbone's best achievable performance. All baselines are retrained on the corresponding training split following the unified evaluation protocol of each benchmark. Each method retains its original architecture and the hyperparameters recommended by the original authors, and only the training data is replaced.</p>
+      </div>
+
       <h3>Cross-generator comparison</h3>
+      <p class="takeaway">With the backbone fully frozen, V-PVP ranks first on both benchmarks.</p>
       <div class="prose">
         <p>Tables 1 and 2 report results on AIGVDBench and GenVidBench-143k. V-PVP reaches mga AUC of <strong>95.28</strong> on AIGVDBench and <strong>93.75</strong> on GenVidBench-143k, ranking first on both benchmarks. The backbone stays fully frozen and only about 0.5M parameters are trained.</p>
         <p>Under the standard readout, some fully fine tuned video backbone in Table 1 sits below the best image level baseline, indicating that releasing backbone parameters alone does not unlock the temporal advantage promised by video pretraining. Our frozen backbone V-PVP exceeds end to end VideoMAE fine tuning (about 87M trainable parameters) with the standard readout by +6.94 AUC, and also surpasses the strongest image level baseline. With the backbone kept fully frozen, V-PVP simultaneously outperforms all video classification baselines, which are trained with full fine-tuning under their original readouts, as well as all image pretrained detectors, while training roughly two orders of magnitude fewer parameters. <strong>This suggests that the standard aggregation readout is an important bottleneck for video backbones in AIGV detection.</strong></p>
       </div>
-      <figure>
-        <div class="plate"><a href="img/table1.png" target="_blank" rel="noopener" aria-label="Open full-size table"><img src="img/table1.png" alt="Table 1: Per-generator AUC on the AIGVDBench open-source split (20 generators). V-PVP (Ours) reaches 95.28 average AUC." loading="lazy"></a></div>
-      </figure>
-      <figure>
-        <div class="plate"><a href="img/table2.png" target="_blank" rel="noopener" aria-label="Open full-size table" style="width:86%;margin:0 auto"><img src="img/table2.png" alt="Table 2: Per-generator AUC on GenVidBench-143k. V-PVP (Ours) reaches 93.75 average AUC." loading="lazy"></a></div>
-      </figure>
+      <div class="chart" id="chart-readout" data-chart>
+        <div class="chart-head"><span class="chart-title">Mean AUC (%) per method<span class="chart-sub">Higher is better. V-PVP runs on a frozen VideoMAE; the VideoMAE row is the same backbone fine-tuned end to end.</span></span><div class="seg" role="group" aria-label="Benchmark"><button type="button" data-k="aigvd" aria-pressed="true">AIGVDBench</button><button type="button" data-k="genvid" aria-pressed="false">GenVidBench-143k</button></div></div>
+        <div class="axis" aria-hidden="true"><span></span><span class="track"><span class="tick" style="left:0.00%">50</span><span class="tick" style="left:20.00%">60</span><span class="tick" style="left:40.00%">70</span><span class="tick" style="left:60.00%">80</span><span class="tick" style="left:80.00%">90</span><span class="tick" style="left:100.00%">100</span></span><span></span></div>
+        <div class="grp-label">AI-generated image detectors</div><div class="row" data-name="NPR"><span class="name">NPR</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:79.80%" aria-label="NPR: 89.9"><span class="tip">NPR: 89.9</span></span></span><span class="val"></span></div><div class="row" data-name="UnivFD"><span class="name">UnivFD</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:80.06%" aria-label="UnivFD: 90.03"><span class="tip">UnivFD: 90.03</span></span></span><span class="val"></span></div><div class="row" data-name="Effort"><span class="name">Effort</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:80.58%" aria-label="Effort: 90.29"><span class="tip">Effort: 90.29</span></span></span><span class="val"></span></div><div class="row" data-name="DDA"><span class="name">DDA</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:81.46%" aria-label="DDA: 90.73"><span class="tip">DDA: 90.73</span></span></span><span class="val"></span></div><div class="row" data-name="MIRROR"><span class="name">MIRROR</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:33.14%" aria-label="MIRROR: 66.57"><span class="tip">MIRROR: 66.57</span></span></span><span class="val"></span></div><div class="grp-label">AI-generated video detectors</div><div class="row" data-name="DeMamba"><span class="name">DeMamba</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:86.28%" aria-label="DeMamba: 93.14"><span class="tip">DeMamba: 93.14</span></span></span><span class="val"></span></div><div class="row" data-name="DeCoF"><span class="name">DeCoF</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:84.40%" aria-label="DeCoF: 92.2"><span class="tip">DeCoF: 92.2</span></span></span><span class="val"></span></div><div class="row" data-name="ReSTrav"><span class="name">ReSTrav</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:38.54%" aria-label="ReSTrav: 69.27"><span class="tip">ReSTrav: 69.27</span></span></span><span class="val"></span></div><div class="row" data-name="NSG-VD"><span class="name">NSG-VD</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:5.10%" aria-label="NSG-VD: 52.55"><span class="tip">NSG-VD: 52.55</span></span></span><span class="val"></span></div><div class="grp-label">Video classification models</div><div class="row" data-name="I3D"><span class="name">I3D</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:85.70%" aria-label="I3D: 92.85"><span class="tip">I3D: 92.85</span></span></span><span class="val"></span></div><div class="row" data-name="SlowFast"><span class="name">SlowFast</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:85.40%" aria-label="SlowFast: 92.7"><span class="tip">SlowFast: 92.7</span></span></span><span class="val"></span></div><div class="row" data-name="TimeSformer"><span class="name">TimeSformer</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:70.82%" aria-label="TimeSformer: 85.41"><span class="tip">TimeSformer: 85.41</span></span></span><span class="val"></span></div><div class="row" data-name="UniFormerV2"><span class="name">UniFormerV2</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:52.92%" aria-label="UniFormerV2: 76.46"><span class="tip">UniFormerV2: 76.46</span></span></span><span class="val"></span></div><div class="row" data-name="VideoMAE"><span class="name">VideoMAE</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:76.68%" aria-label="VideoMAE: 88.34"><span class="tip">VideoMAE: 88.34</span></span></span><span class="val"></span></div><div class="row ours" data-name="V-PVP (Ours)"><span class="name">V-PVP (Ours)</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:20.00%"></span><span class="gl" style="left:40.00%"></span><span class="gl" style="left:60.00%"></span><span class="gl" style="left:80.00%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:90.56%" aria-label="V-PVP (Ours): 95.28"><span class="tip">V-PVP (Ours): 95.28</span></span></span><span class="val">95.28</span></div>
+        <p class="chart-note">Axis starts at 50 (chance level). Hover a dot for its value; exact numbers are in Tables 1 and 2.</p>
+        <script type="application/json">{"lo": 50, "hi": 100, "ours": "V-PVP (Ours)", "series": {"aigvd": {"NPR": 89.9, "UnivFD": 90.03, "Effort": 90.29, "DDA": 90.73, "MIRROR": 66.57, "DeMamba": 93.14, "DeCoF": 92.2, "ReSTrav": 69.27, "NSG-VD": 52.55, "I3D": 92.85, "SlowFast": 92.7, "TimeSformer": 85.41, "UniFormerV2": 76.46, "VideoMAE": 88.34, "V-PVP (Ours)": 95.28}, "genvid": {"NPR": 50.26, "UnivFD": 78.76, "Effort": 79.08, "DDA": 92.79, "MIRROR": 75.81, "DeMamba": 90.03, "DeCoF": 73.3, "ReSTrav": 90.28, "NSG-VD": 69.22, "I3D": 92.76, "SlowFast": 92.95, "TimeSformer": 91.18, "UniFormerV2": 69.87, "VideoMAE": 88.59, "V-PVP (Ours)": 93.75}}}</script>
+      </div>
+      <div class="tbl xl">
+        <p class="cap"><b class="n">Table 1.</b> Per-generator AUC (%) on the <strong>AIGVDBench</strong> open-source split (20 generators). Best average in <strong>bold</strong>, second <u>underlined</u>.</p>
+        <div class="scroll"><table class="dense">
+          <thead><tr class="grp"><th></th><th colspan="6" class="vsep">I2V</th><th colspan="12" class="vsep">T2V</th><th colspan="2" class="vsep">V2V</th><th class="vsep"></th></tr><tr><th>Method</th><th class=vsep>Easy<br>Animate</th><th>LTX</th><th>Pyramid<br>Flow</th><th>SEINE</th><th>SVD</th><th>Video<br>Crafter</th><th class=vsep>Acc<br>Video</th><th>Animate<br>Diff</th><th>Cogvideo<br>x1.5</th><th>Easy<br>Animate</th><th>Hunyuan</th><th>IPOC</th><th>LTX</th><th>Open<br>Sora</th><th>Pyramid<br>Flow</th><th>Rep<br>Video</th><th>Video<br>Crafter</th><th>Wan<br>2.1</th><th class=vsep>Cogvideo<br>x1.5</th><th>LTX</th><th class="vsep">AVG</th></tr></thead>
+          <tbody>
+            <tr class="fam"><td colspan="22">AI-generated image detectors</td></tr>
+            <tr><td>NPR</td><td class="vsep">96.78</td><td>85.76</td><td>99.22</td><td>99.21</td><td>99.93</td><td>93.97</td><td class="vsep">68.32</td><td>66.10</td><td>93.72</td><td>96.23</td><td>74.35</td><td>93.82</td><td>92.04</td><td>99.99</td><td>99.45</td><td>86.50</td><td>98.44</td><td>76.72</td><td class="vsep">96.96</td><td>80.50</td><td class="vsep">89.90</td></tr>
+            <tr><td>UnivFD</td><td class="vsep">80.18</td><td>82.77</td><td>86.83</td><td>94.29</td><td>96.39</td><td>80.01</td><td class="vsep">82.74</td><td>93.29</td><td>94.77</td><td>90.77</td><td>83.27</td><td>97.49</td><td>93.30</td><td>99.72</td><td>97.23</td><td>90.36</td><td>98.03</td><td>84.16</td><td class="vsep">93.47</td><td>81.56</td><td class="vsep">90.03</td></tr>
+            <tr><td>Effort</td><td class="vsep">81.88</td><td>82.29</td><td>86.96</td><td>92.90</td><td>96.02</td><td>79.80</td><td class="vsep">82.39</td><td>93.42</td><td>94.82</td><td>92.44</td><td>83.85</td><td>97.75</td><td>93.28</td><td>99.74</td><td>97.71</td><td>92.18</td><td>98.33</td><td>85.58</td><td class="vsep">93.54</td><td>80.88</td><td class="vsep">90.29</td></tr>
+            <tr><td>DDA</td><td class="vsep">78.28</td><td>90.54</td><td>88.79</td><td>99.57</td><td>99.99</td><td>99.76</td><td class="vsep">86.02</td><td>92.43</td><td>89.82</td><td>75.77</td><td>87.34</td><td>97.58</td><td>92.15</td><td>98.85</td><td>88.78</td><td>82.53</td><td>99.74</td><td>89.70</td><td class="vsep">89.93</td><td>87.08</td><td class="vsep">90.73</td></tr>
+            <tr><td>MIRROR</td><td class="vsep">55.03</td><td>43.59</td><td>30.93</td><td>98.05</td><td>93.31</td><td>99.86</td><td class="vsep">69.73</td><td>90.45</td><td>51.15</td><td>73.20</td><td>67.15</td><td>74.45</td><td>45.66</td><td>43.27</td><td>49.63</td><td>66.62</td><td>99.87</td><td>70.06</td><td class="vsep">54.63</td><td>54.76</td><td class="vsep">66.57</td></tr>
+            <tr class="fam"><td colspan="22">AI-generated video detectors</td></tr>
+            <tr><td>DeMamba</td><td class="vsep">98.50</td><td>96.25</td><td>98.75</td><td>99.25</td><td>97.50</td><td>95.50</td><td class="vsep">66.50</td><td>85.25</td><td>95.75</td><td>98.50</td><td>73.00</td><td>96.25</td><td>97.00</td><td>98.25</td><td>97.75</td><td>90.50</td><td>95.75</td><td>88.75</td><td class="vsep">98.50</td><td>95.25</td><td class="vsep second">93.14</td></tr>
+            <tr><td>DeCoF</td><td class="vsep">90.84</td><td>90.55</td><td>95.54</td><td>97.33</td><td>98.98</td><td>63.10</td><td class="vsep">88.25</td><td>89.24</td><td>98.16</td><td>91.87</td><td>86.33</td><td>99.33</td><td>97.61</td><td>99.76</td><td>99.76</td><td>97.22</td><td>89.25</td><td>83.53</td><td class="vsep">97.40</td><td>89.86</td><td class="vsep">92.20</td></tr>
+            <tr><td>ReSTrav</td><td class="vsep">60.17</td><td>68.40</td><td>64.52</td><td>55.02</td><td>54.97</td><td>73.73</td><td class="vsep">80.25</td><td>88.00</td><td>61.57</td><td>66.13</td><td>79.32</td><td>68.67</td><td>60.82</td><td>79.60</td><td>67.65</td><td>63.85</td><td>80.38</td><td>60.98</td><td class="vsep">78.88</td><td>72.55</td><td class="vsep">69.27</td></tr>
+            <tr><td>NSG-VD</td><td class="vsep">50.49</td><td>54.79</td><td>52.87</td><td>52.58</td><td>50.66</td><td>53.91</td><td class="vsep">57.23</td><td>51.98</td><td>52.24</td><td>50.02</td><td>48.24</td><td>52.26</td><td>54.06</td><td>62.62</td><td>51.43</td><td>52.03</td><td>47.04</td><td>48.12</td><td class="vsep">54.44</td><td>53.97</td><td class="vsep">52.55</td></tr>
+            <tr class="fam"><td colspan="22">Video classification models</td></tr>
+            <tr><td>I3D</td><td class="vsep">95.10</td><td>91.51</td><td>90.11</td><td>84.35</td><td>90.65</td><td>90.75</td><td class="vsep">96.06</td><td>95.10</td><td>91.81</td><td>97.14</td><td>95.78</td><td>93.61</td><td>94.08</td><td>99.65</td><td>95.49</td><td>87.93</td><td>98.48</td><td>84.59</td><td class="vsep">96.24</td><td>88.51</td><td class="vsep">92.85</td></tr>
+            <tr><td>SlowFast</td><td class="vsep">93.47</td><td>94.45</td><td>95.42</td><td>94.41</td><td>98.60</td><td>91.50</td><td class="vsep">91.11</td><td>88.24</td><td>93.27</td><td>96.53</td><td>91.59</td><td>91.97</td><td>97.71</td><td>97.64</td><td>96.71</td><td>88.18</td><td>97.24</td><td>73.08</td><td class="vsep">91.34</td><td>91.61</td><td class="vsep">92.70</td></tr>
+            <tr><td>TimeSformer</td><td class="vsep">78.86</td><td>78.38</td><td>80.94</td><td>77.16</td><td>84.74</td><td>84.26</td><td class="vsep">87.15</td><td>91.60</td><td>87.16</td><td>89.31</td><td>86.77</td><td>88.38</td><td>85.84</td><td>96.57</td><td>91.03</td><td>80.82</td><td>94.77</td><td>78.33</td><td class="vsep">88.01</td><td>78.20</td><td class="vsep">85.41</td></tr>
+            <tr><td>UniFormerV2</td><td class="vsep">76.92</td><td>68.96</td><td>74.77</td><td>73.47</td><td>76.82</td><td>67.75</td><td class="vsep">71.21</td><td>73.98</td><td>75.76</td><td>81.35</td><td>72.37</td><td>80.81</td><td>73.22</td><td>95.34</td><td>86.86</td><td>74.75</td><td>84.27</td><td>78.87</td><td class="vsep">73.92</td><td>67.77</td><td class="vsep">76.46</td></tr>
+            <tr><td>VideoMAE</td><td class="vsep">84.21</td><td>84.15</td><td>87.11</td><td>92.81</td><td>88.24</td><td>94.52</td><td class="vsep">91.64</td><td>94.28</td><td>81.67</td><td>88.04</td><td>88.82</td><td>87.11</td><td>86.78</td><td>98.74</td><td>93.13</td><td>80.93</td><td>97.62</td><td>76.86</td><td class="vsep">87.76</td><td>82.45</td><td class="vsep">88.34</td></tr>
+            <tr class="ours"><td>V-PVP (Ours)</td><td class="vsep">94.18</td><td>94.05</td><td>94.68</td><td>97.48</td><td>94.53</td><td>97.19</td><td class="vsep">97.75</td><td>96.84</td><td>93.82</td><td>94.82</td><td>95.90</td><td>96.11</td><td>95.82</td><td>99.69</td><td>96.40</td><td>90.17</td><td>99.02</td><td>87.67</td><td class="vsep">97.45</td><td>91.96</td><td class="vsep best">95.28</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="tbl narrow">
+        <p class="cap"><b class="n">Table 2.</b> Per-generator AUC (%) on <strong>GenVidBench-143k</strong> (cross-source protocol). Best average in <strong>bold</strong>, second <u>underlined</u>.</p>
+        <div class="scroll"><table class="">
+          <thead><tr><th>Method</th><th>MuseV</th><th>SVD</th><th>CogVideo</th><th>Mora</th><th class="vsep">AVG</th></tr></thead>
+          <tbody>
+            <tr class="fam"><td colspan="6">AI-generated image detectors</td></tr>
+            <tr><td>NPR</td><td>48.87</td><td>30.03</td><td>91.27</td><td>30.89</td><td class="vsep">50.26</td></tr>
+            <tr><td>UnivFD</td><td>65.79</td><td>55.37</td><td>97.40</td><td>96.46</td><td class="vsep">78.76</td></tr>
+            <tr><td>Effort</td><td>65.85</td><td>55.51</td><td>97.88</td><td>97.08</td><td class="vsep">79.08</td></tr>
+            <tr><td>DDA</td><td>91.72</td><td>87.40</td><td>96.92</td><td>95.12</td><td class="vsep">92.79</td></tr>
+            <tr><td>MIRROR</td><td>77.29</td><td>74.59</td><td>59.93</td><td>91.42</td><td class="vsep">75.81</td></tr>
+            <tr class="fam"><td colspan="6">AI-generated video detectors</td></tr>
+            <tr><td>DeMamba</td><td>88.46</td><td>73.05</td><td>98.80</td><td>99.80</td><td class="vsep">90.03</td></tr>
+            <tr><td>DeCoF</td><td>57.51</td><td>52.44</td><td>93.55</td><td>89.72</td><td class="vsep">73.30</td></tr>
+            <tr><td>ReSTrav</td><td>86.04</td><td>82.12</td><td>96.97</td><td>95.99</td><td class="vsep">90.28</td></tr>
+            <tr><td>NSG-VD</td><td>78.26</td><td>63.99</td><td>72.83</td><td>61.80</td><td class="vsep">69.22</td></tr>
+            <tr class="fam"><td colspan="6">Video classification models</td></tr>
+            <tr><td>I3D</td><td>91.91</td><td>87.17</td><td>94.85</td><td>97.12</td><td class="vsep">92.76</td></tr>
+            <tr><td>SlowFast</td><td>89.85</td><td>85.24</td><td>98.64</td><td>98.06</td><td class="vsep second">92.95</td></tr>
+            <tr><td>TimeSformer</td><td>89.06</td><td>85.92</td><td>91.72</td><td>98.00</td><td class="vsep">91.18</td></tr>
+            <tr><td>UniFormerV2</td><td>66.66</td><td>64.42</td><td>59.63</td><td>88.78</td><td class="vsep">69.87</td></tr>
+            <tr><td>VideoMAE</td><td>82.14</td><td>81.78</td><td>94.55</td><td>95.89</td><td class="vsep">88.59</td></tr>
+            <tr class="ours"><td>V-PVP (Ours)</td><td>90.27</td><td>88.63</td><td>97.79</td><td>98.30</td><td class="vsep best">93.75</td></tr>
+          </tbody>
+        </table></div>
+      </div>
 
       <h3>Generality across backbones and adaptation schemes</h3>
+      <p class="takeaway">V-PVP is best on every backbone, and its gains grow as the backbone is adapted.</p>
       <div class="prose">
         <p>To test whether the bottleneck is the readout rather than the representation, we port V-PVP to several frozen video backbones and compare against the standard readout and adaptation alternatives.</p>
+        <p>We cover four ViT-based encoders with diverse pretraining objectives: TimeSformer, VideoMAE, UniFormerV2, and the multimodal large model Qwen3-VL-8B. On every backbone we compare two groups of methods. The first keeps the backbone frozen and only trains a head, including a linear probe, a matched-size head, and our V-PVP. The second updates backbone parameters, including LoRA fine-tuning with rank 8 and full fine-tuning. Full fine-tuning is omitted on Qwen3-VL-8B due to its ~8B parameter scale.</p>
       </div>
       <figure>
-        <div class="plate"><img src="img/backbone_auc.png" alt="AUC of linear probe, matched-size head, LoRA, full fine-tune and frozen + V-PVP on TimeSformer, VideoMAE, UniFormerV2 and Qwen3-VL-8B." loading="lazy"></div>
-        <figcaption><b class="n">Figure 4.</b> AUC comparison across different backbones and training strategies on <strong>AIGVDBench</strong></figcaption>
+        <div class="plate narrow"><img class="zoomable" src="img/backbone_auc.png" alt="AUC of linear probe, matched-size head, LoRA, full fine-tuning and frozen backbone with V-PVP on TimeSformer, VideoMAE, UniFormerV2 and Qwen3-VL-8B." loading="lazy"></div>
+        <figcaption><b class="n">Figure 4.</b> AUC comparison across different backbones and training strategies on <strong>AIGVDBench</strong>.</figcaption>
       </figure>
-      <figure>
-        <div class="plate"><a href="img/table4.png" target="_blank" rel="noopener" aria-label="Open full-size table"><img src="img/table4.png" alt="Table 4: V-PVP composes with backbone adaptation. Frozen 95.28, LoRA 95.06, full fine-tune 97.21 mga AUC with V-PVP." loading="lazy"></a></div>
-      </figure>
+      <div class="prose" style="margin-top:1.4rem">
+        <p>Figure 4 reports mga AUC on the AIGVDBench open-source split. V-PVP achieves the highest AUC on every backbone, surpassing all readout and adaptation alternatives while training roughly two orders of magnitude fewer parameters than full fine-tuning. The advantage holds across all four pretraining objectives, which supports the readout-bottleneck hypothesis: the bulk of the fine-tuning gain comes from adjusting how patch tokens are aggregated, not from modifying the representation itself. We also note that backbone tuning does not always help. On UniFormerV2, both LoRA and full fine-tuning stay below 80, lower than the matched-size head with the backbone frozen. This suggests that updating backbone parameters can amplify overfitting to the training generator's spatial fingerprint rather than help. V-PVP avoids this failure mode by anchoring the readout to a generator-invariant quantity and reaches 93.56 on the same backbone.</p>
+        <p>A natural follow-up question is whether the gains of V-PVP depend on a frozen backbone. We test this on VideoMAE by pairing V-PVP with LoRA at rank 8 and with full fine-tuning, and compare against the same adaptation schemes under the standard readout. Table 4 reports mga AUC on AIGVDBench. The standard-readout column is nearly flat across adaptation regimes, indicating that backbone capacity has little outlet once patch tokens are collapsed by joint spatiotemporal pooling. V-PVP responds in the opposite way and improves over the standard readout under every adaptation scheme, with the largest margin reaching 8.9 points under full fine-tuning. Even the frozen configuration with V-PVP, at roughly 0.5M trainable parameters, surpasses full fine-tuning under the standard readout at roughly 87M parameters. The right axis along which to invest capacity is therefore the readout rather than the backbone.</p>
+      </div>
+      <div class="tbl narrow">
+        <p class="cap"><b class="n">Table 4.</b> V-PVP composes with backbone adaptation. mga AUC on AIGVDBench with VideoMAE under three adaptation schemes. V-PVP improves over the standard readout under every scheme; the frozen V-PVP configuration already exceeds full fine-tuning under the standard readout at a fraction of the parameter cost.</p>
+        <div class="scroll"><table class="">
+          <thead><tr><th>Adaptation</th><th>Trainable params</th><th>Standard readout</th><th>V-PVP</th><th>Δ</th></tr></thead>
+          <tbody>
+            <tr><td>Frozen</td><td>~0.5 M</td><td>89.82</td><td class="best">95.28</td><td>+5.5</td></tr>
+            <tr><td>LoRA (<span class="m">r</span> = 8)</td><td>~1 M</td><td>88.22</td><td class="best">95.06</td><td>+6.8</td></tr>
+            <tr><td>Full fine-tune</td><td>~87 M</td><td>88.34</td><td class="best">97.21</td><td>+8.9</td></tr>
+          </tbody>
+        </table></div>
+      </div>
 
       <h3>Ablation study</h3>
-      <figure>
-        <div class="plate"><a href="img/table3.png" target="_blank" rel="noopener" aria-label="Open full-size table"><img src="img/table3.png" alt="Table 3: Ablation studies on V-PVP: stream-level ablation and alternative patch-level readouts. V-PVP reaches 94.34 AUC." loading="lazy"></a></div>
-      </figure>
+      <p class="takeaway">Both streams and the velocity prior are needed; heads without the prior overfit.</p>
+      <div class="prose">
+        <p>We ablate V-PVP along two axes. The first looks inside V-PVP and asks how much each stream and the velocity gating contribute. The second looks outside and asks whether other readouts that drop the velocity prior can reach the same accuracy. All ablation runs use the frozen VideoMAE-K400 backbone with head-only training. All ablation rows including V-PVP use a fixed 5-epoch budget for fair comparison. Results are reported as mean AUC ± standard deviation over four random seeds.</p>
+      </div>
+      <div class="prose">
+          <h4>Per-stream contribution</h4>
+          <p>Table 3a dissects V-PVP into its two streams. Going from <span class="m">r</span>-only (MLPMean, 79.10) to <span class="m">z&#772; + r</span> adds +11.13, most of which comes from the semantic information carried by the GAP pathway. Replacing <span class="m">z&#772;</span> with the velocity-gated <span class="m">z&#771;</span> adds another +4.11 on top of an already channel-faithful stream. The middle two rows show that both components are needed: removing the <span class="m">r</span> stream drops AUC by 1.27, and removing the velocity input from the scoring network drops it by 2.26.</p>
+          <h4>Alternative patch-level readouts</h4>
+          <p>A natural question is whether a free-form head that keeps the patch dimension but drops the velocity prior could match V-PVP. Convolutional heads (Conv2D, Conv3D) and a spatial-attention head are applied to the per-patch energy map <span class="m">E<span class="ss"><span>(p)</span><span>t</span></span> = &#8214;v<span class="ss"><span>(p)</span><span>t</span></span>&#8214;<sub><span class="r">2</span></sub></span>, and a PatchMLP consumes the raw patch tokens directly as the most expressive alternative. Heads with more capacity to use the spatial dimension fit the training set more aggressively but generalise worse: PatchMLP and Conv2D reach near-perfect train AUC, yet their test mga AUC stays well below V-PVP. Without an explicit prior, the spatial pattern that supervision finds is generator-specific and does not transfer. V-PVP avoids this by anchoring patch selection to the generator-invariant quantity <span class="m">&#8214;v<span class="ss"><span>(p)</span><span>t</span></span>&#8214;<sub><span class="r">2</span></sub></span>, outperforming Conv2D by 25.73 points (94.34 vs. 68.61).</p>
+      </div>
+      <div class="duo bare">
+        <div><div class="tbl ">
+        <p class="cap"><b class="n">Table 3a.</b> Stream-level ablation (mean AUC ± std over four seeds; frozen VideoMAE-K400, fixed 5-epoch budget).</p>
+        <div class="scroll"><table class="">
+          <thead><tr><th>Configuration</th><th class="l">Diff vs. V-PVP</th><th>AUC</th></tr></thead>
+          <tbody>
+            <tr><td><span class="m">r</span> alone, MLPMean</td><td class="l">no <span class="m">z&#771;</span>, GAP only</td><td>79.10 ± 0.16</td></tr>
+            <tr><td><span class="m">z&#772; + r</span> (PVP)</td><td class="l"><span class="m">z&#771;</span> → GAP</td><td>90.23 ± 0.21</td></tr>
+            <tr><td><span class="m">z&#771;</span> alone (no <span class="m">r</span>)</td><td class="l">no <span class="m">r</span> stream</td><td>93.07 ± 0.35</td></tr>
+            <tr><td><span class="m">z&#771; + r</span>, no <span class="m">&#8214;v&#8214;<sub><span class="r">2</span></sub></span> in scorer</td><td class="l">no velocity gating</td><td>92.08 ± 1.84</td></tr>
+            <tr class="ours"><td>V-PVP (<span class="m">z&#771; + r</span>)</td><td class="l">—</td><td class="best">94.34 ± 0.32</td></tr>
+          </tbody>
+        </table></div>
+      </div></div>
+        <div><div class="tbl ">
+        <p class="cap"><b class="n">Table 3b.</b> Alternative patch-level readouts (<span class="m">z</span>: patch tokens; <span class="m">E</span>: <span class="m">&#8214;v<span class="ss"><span>(p)</span><span>t</span></span>&#8214;<sub><span class="r">2</span></sub></span>).</p>
+        <div class="scroll"><table class="">
+          <thead><tr><th>Head</th><th>Input</th><th>AUC</th></tr></thead>
+          <tbody>
+            <tr><td>Mean (sanity)</td><td><span class="m">E</span></td><td>54.34 ± 4.39</td></tr>
+            <tr><td>PatchMLP</td><td><span class="m">z</span></td><td>91.70 ± 0.12</td></tr>
+            <tr><td>Conv2D</td><td><span class="m">E</span></td><td>68.61 ± 0.70</td></tr>
+            <tr><td>Conv3D</td><td><span class="m">E</span></td><td>64.66 ± 0.92</td></tr>
+            <tr><td>SpatialAttn</td><td><span class="m">E</span></td><td>67.37 ± 0.98</td></tr>
+            <tr class="ours"><td>V-PVP (Ours)</td><td><span class="m">z + &#8214;v&#8214;<sub><span class="r">2</span></sub></span></td><td class="best">94.34 ± 0.32</td></tr>
+          </tbody>
+        </table></div>
+      </div></div>
+      </div>
+    </section>
+
+    <section id="conclusion" aria-labelledby="h-con">
+      <h2 id="h-con">Conclusion</h2>
+      <div class="prose">
+        <p>We identify the readout layer as the principal bottleneck that prevents video pretrained backbones from realizing their temporal advantage on AIGV detection. The standard CLS or GAP aggregator performs a joint spatiotemporal and semantic collapse over patch tokens, which erases inter patch relations and dilutes per channel velocity magnitudes. Both losses remove the cues that AIGV detection most reliably depends on.</p>
+        <p>Building on this diagnosis, we propose V-PVP, a lightweight readout that keeps the backbone fully frozen and replaces only the aggregation layer with two parallel streams over the patch velocity field. The velocity gated aggregation <span class="m">z&#771;<sub>t</sub></span> conditions patch attention on <span class="m">&#8214;v<span class="ss"><span>(p)</span><span>t</span></span>&#8214;<sub><span class="r">2</span></sub></span> to carry inter patch heterogeneity into the pooled output, and the channel faithful stream <span class="m">r<sub>t</sub></span> preserves per channel magnitudes through an element wise nonlinearity. V-PVP adds only about 0.5M trainable parameters. Across multiple ViT based video backbones and two cross generator benchmarks, V-PVP consistently surpasses same backbone readouts and exceeds end to end fine tuning with the standard readout. With VideoMAE on AIGVDBench, our method reaches 95.28 mga AUC while keeping the backbone fully frozen, and even outperforms full fine tuning under the standard readout. These results indicate that for AIGV detection, the right axis to invest capacity is the readout rather than the backbone.</p>
+        <h4>Limitations</h4>
+        <p>V-PVP has several known limitations. First, generators that deliberately mimic real video statistics, for example by injecting inter frame jitter or preserving high frequency spatial detail, can shrink the inter patch separability of <span class="m">&#8214;v<span class="ss"><span>(p)</span><span>t</span></span>&#8214;<sub><span class="r">2</span></sub></span> and drive velocity gating toward uniform attention. Second, very short clips with <span class="m">T &lt; <span class="r">4</span></span> leave too few temporal samples of patch velocity and increase the variance of <span class="m">z&#771;<sub>t</sub></span> and <span class="m">r<sub>t</sub></span>. Third, when the backbone has not been pretrained on a distribution close to the target domain, the frozen patch tokens may be too weak to support readout only learning, and LoRA or full fine tuning would be more appropriate. Finally, the readout bottleneck still exists on CNN based backbones but in a softened form, since internal convolutions already perform part of the spatial aggregation before the readout, partially absorbing the patch level evidence that V-PVP relies on. The paper's appendix confirms this on I3D-R50 and SlowFast-R50, but a thorough study of CNN specific readout design is left to future work.</p>
+      </div>
+    </section>
+
+    <section id="code" aria-labelledby="h-code">
+      <h2 id="h-code">Code</h2>
+      <p class="prose repo">The <a href="https://github.com/manic-cui/Rethinking-the-readout">repository</a> contains the V-PVP head, the frozen VideoMAE wrapper, the AIGVDBench open-source evaluation script, and two trained heads (AIGVDBench and GenVidBench-143k). The command below reproduces the V-PVP row of Table 1.</p>
+      <div class="code"><button type="button" data-copy>Copy</button><pre><code>git clone https://github.com/manic-cui/Rethinking-the-readout.git
+cd Rethinking-the-readout
+python -m pip install -r requirements.txt
+
+cd src
+python eval_opensource.py \
+    --backbone         videomae_k400 \
+    --backbone_weights /path/to/videomae-base-finetuned-kinetics \
+    --head_ckpt        ../checkpoints/pvp_heads/videomae_k400_vpvp.pt \
+    --data_root        /path/to/aigvdbench \
+    --num_frames       16 \
+    --batch_size       32</code></pre></div>
     </section>
 
     <section id="bibtex" aria-labelledby="h-bib">
       <h2 id="h-bib">BibTeX</h2>
-      <div class="bib">
-        <button type="button" data-copy>Copy</button>
-        <pre><code>@inproceedings{cui2026rethinking,
+      <div class="code bib"><button type="button" data-copy>Copy</button><pre><code>@inproceedings{cui2026rethinking,
   title     = {Rethinking the Readout: Unlocking Video Backbones for {AI}-Generated Video Detection},
   author    = {Cui, Manni and Qin, Ziheng and Wang, ZiAn and Liu, Ruiqi and Zou, Dianyuan and Wei, Jianglan and Zhou, Han and Liu, Yu and Xu, Jingrui and Wang, Wenhao and Zhang, Zhenyu},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
   year      = {2026}
-}</code></pre>
-      </div>
+}</code></pre></div>
     </section>
   </main>
 
   <footer>
     <a href="../../index.html">← Manni Cui</a>
-    <span>Figures and tables are reproduced from the paper.</span>
+    <span>Text, figures and tables are from the paper.</span>
   </footer>
+
+  <div class="lb" role="dialog" aria-modal="true" aria-label="Enlarged figure"><button type="button">Close</button><img alt=""></div>
+
   <script>
+  (function () {
+    // copy buttons
     document.querySelectorAll('[data-copy]').forEach(function (b) {
       b.addEventListener('click', function () {
         var t = b.parentElement.querySelector('code').innerText;
-        var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
-        if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () {});
+        if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () {
+          b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600);
+        });
       });
     });
+    // lightbox
+    var lb = document.querySelector('.lb'), lbi = lb.querySelector('img'), last = null;
+    function close() { lb.classList.remove('open'); if (last) last.focus(); }
+    document.querySelectorAll('img.zoomable').forEach(function (im) {
+      im.tabIndex = 0;
+      function open() { last = im; lbi.src = im.currentSrc || im.src; lbi.alt = im.alt; lb.classList.add('open'); lb.querySelector('button').focus(); }
+      im.addEventListener('click', open);
+      im.addEventListener('keydown', function (e) { if (e.key === 'Enter') open(); });
+    });
+    lb.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && lb.classList.contains('open')) close(); });
+    // dot charts
+    document.querySelectorAll('[data-chart]').forEach(function (c) {
+      var d = JSON.parse(c.querySelector('script').textContent);
+      function show(k) {
+        var s = d.series[k];
+        c.querySelectorAll('.row').forEach(function (r) {
+          var n = r.dataset.name, v = s[n], dot = r.querySelector('.dot');
+          dot.style.left = ((v - d.lo) / (d.hi - d.lo) * 100).toFixed(2) + '%';
+          dot.setAttribute('aria-label', n + ': ' + v);
+          dot.querySelector('.tip').textContent = n + ': ' + v;
+          if (n === d.ours) r.querySelector('.val').textContent = v;
+        });
+      }
+      c.querySelectorAll('.seg button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          c.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+          show(b.dataset.k);
+        });
+      });
+      var sel = c.querySelector('select');
+      if (sel) sel.addEventListener('change', function () { show(sel.value); });
+    });
+    // table of contents highlight
+    var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+    if ('IntersectionObserver' in window && links.length) {
+      var map = {};
+      links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting && map[e.target.id]) {
+            links.forEach(function (a) { a.classList.remove('on'); });
+            map[e.target.id].classList.add('on');
+          }
+        });
+      }, { rootMargin: '-35% 0px -60% 0px' });
+      Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      window.addEventListener('scroll', function () {
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+          links.forEach(function (a) { a.classList.remove('on'); });
+          links[links.length - 1].classList.add('on');
+        }
+      }, { passive: true });
+    }
+  })();
   </script>
 </body>
 </html>

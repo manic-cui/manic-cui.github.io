@@ -14,7 +14,21 @@
 </head>
 <body>
   <nav class="back"><a href="../../index.html">← Manni Cui</a></nav>
+  <nav class="toc" aria-label="On this page">
+    <p>On this page</p>
+    <ol>
+      <li><a href="#abstract">Abstract</a></li>
+      <li><a href="#motivation">Motivation</a></li>
+      <li><a href="#method">Method</a></li>
+      <li><a href="#experiments">Experiments</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#bibtex">BibTeX</a></li>
+    </ol>
+  </nav>
+
   <header class="paper">
+    <span class="venue pre">arXiv preprint, 2026</span>
     <h1 class="paper-title">Learning Continuous Source Responses for Generalizable <span class="nw">AI-Generated</span> Image Detection</h1>
     <p class="authors">
         <span><a href="../../index.html">Manni Cui</a><sup>1,2</sup></span>
@@ -36,103 +50,335 @@
         <span><sup>4</sup>Jilin University</span>
     </p>
     <p class="notes"><span><sup>†</sup>Corresponding authors</span></p>
-    <p class="venue pre">arXiv preprint, 2026</p>
     <ul class="buttons">
       <li><a href="https://arxiv.org/pdf/2609.14316"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Paper</a></li>
       <li><a href="https://arxiv.org/abs/2609.14316"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>arXiv</a></li>
       <li><a href="https://github.com/manic-cui/CuRe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>Code</a></li>
       <li><a href="#bibtex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h4v4H7zM7 11c0 3-1 5-3 6M15 7h4v4h-4zM15 11c0 3-1 5-3 6"/></svg>BibTeX</a></li>
     </ul>
+    <p class="tldr">Instead of training a detector only on real and fake endpoints, CuRe teaches the backbone how much of an image is generated, then classifies inside a compact source-response subspace.</p>
   </header>
 
   <main>
-    <section aria-label="Teaser">
+    <section class="first" aria-label="Teaser">
       <figure>
-        <div class="plate"><img src="img/teaser.jpg" alt="Binary supervision versus continuous source change: images blended from real (alpha = 0) to generated (alpha = 1)." loading="lazy"></div>
-        <figcaption><b class="n">Figure 1.</b> <strong>Comparison of binary and continuous source supervision.</strong> Left: binary labels provide only coarse endpoint supervision, allowing models to learn decision boundaries based on different shortcuts (dashed curves), potentially compromising robustness and generalization. Right: CuRe constructs continuous transitions from real (<i class="m">α</i> = 0) to generated (<i class="m">α</i> = 1) images and predicts the mixing ratio <i class="m">α</i>, providing finer-grained supervision that encourages the encoder to distinguish intermediate states and become more sensitive to changes in image authenticity.</figcaption>
+        <div class="plate "><img class="zoomable" src="img/teaser.jpg" alt="Binary supervision versus continuous source change from a real image (alpha = 0) to a generated image (alpha = 1)." loading="lazy"></div>
+        <figcaption><b class="n">Figure 1.</b> <strong>Comparison of binary and continuous source supervision.</strong> Left: binary labels provide only coarse endpoint supervision, allowing models to learn decision boundaries based on different shortcuts (dashed curves), potentially compromising robustness and generalization. Right: CuRe constructs continuous transitions from real (<span class="m">α = <span class="r">0</span></span>) to generated (<span class="m">α = <span class="r">1</span></span>) images and predicts the mixing ratio <span class="m">α</span>, providing finer-grained supervision that encourages the encoder to distinguish intermediate states and become more sensitive to changes in image authenticity.</figcaption>
       </figure>
+    </section>
+
+    <section id="glance" aria-label="Key results">
+    <ul class="glance">
+      <li><span class="num">89.7<small>%</small></span><span class="what">average balanced accuracy over ten public benchmarks, 5.2 points above the second-best method (DDA, 84.5%)</span></li>
+      <li><span class="num">93.8<small>%</small></span><span class="what">balanced accuracy on the in-the-wild Chameleon benchmark, 10.9 points above the second-best method</span></li>
+      <li><span class="num">12<small>/ 12</small></span><span class="what">backbone and LoRA-rank settings in which ratio supervision beats binary supervision, with AUC gains of 2.7 to 9.3 points</span></li>
+    </ul>
     </section>
 
     <section id="abstract" aria-labelledby="h-abs">
       <h2 id="h-abs">Abstract</h2>
-      <div class="prose abstract">
-        <p>Advances in image generation have made synthetic images increasingly difficult to distinguish from real photographs, raising concerns about the trustworthiness of visual media. Existing AI-generated image detectors often perform well on in-domain data, but their robustness and cross-generator generalization remain limited. These limitations are commonly attributed to overfitting to shortcut cues. Although many methods seek to suppress shortcut learning, most retain binary classification as the training task without reconsidering how the task itself shapes the learned representations. We introduce <strong>CuRe</strong>, a framework for learning <strong>C</strong>ontinuous So<strong>u</strong>rce <strong>Re</strong>sponses that revisits authenticity detection from the perspective of the training task. CuRe reformulates backbone adaptation as regression of real–generated mixing ratios, providing finer supervision that encourages the model to capture authenticity-related variation beyond binary endpoint separation. We further select a compact source-response subspace to suppress nuisance variation and limit the final classifier's access to potential shortcut cues. Across ten public benchmarks, CuRe achieves an average balanced accuracy of 89.7%, exceeding the second-best method by 5.2%. Further experiments demonstrate consistent generalization gains across visual backbones and strong robustness to common image degradations. Code is available at <a href="https://github.com/manic-cui/CuRe">https://github.com/manic-cui/CuRe</a>.</p>
-      </div>
+      <div class="prose abstract"><p>Advances in image generation have made synthetic images increasingly difficult to distinguish from real photographs, raising concerns about the trustworthiness of visual media. Existing AI-generated image detectors often perform well on in-domain data, but their robustness and cross-generator generalization remain limited. These limitations are commonly attributed to overfitting to shortcut cues. Although many methods seek to suppress shortcut learning, most retain binary classification as the training task without reconsidering how the task itself shapes the learned representations. We introduce <strong>CuRe</strong>, a framework for learning <strong>C</strong>ontinuous So<strong>u</strong>rce <strong>Re</strong>sponses that revisits authenticity detection from the perspective of the training task. CuRe reformulates backbone adaptation as regression of real–generated mixing ratios, providing finer supervision that encourages the model to capture authenticity-related variation beyond binary endpoint separation. We further select a compact source-response subspace to suppress nuisance variation and limit the final classifier's access to potential shortcut cues. Across ten public benchmarks, CuRe achieves an average balanced accuracy of 89.7%, exceeding the second-best method by 5.2%. Further experiments demonstrate consistent generalization gains across visual backbones and strong robustness to common image degradations. Code is available at <a href="https://github.com/manic-cui/CuRe">https://github.com/manic-cui/CuRe</a>.</p></div>
+      <h3>Contributions</h3>
+      <ol class="contrib">
+        <li>We offer a perspective on the robustness and generalization challenges in AIGI detection by examining how the training task shapes the learned representations.</li>
+        <li>We propose CuRe, which shifts backbone adaptation from binary classification to continuous regression of the mixing ratio, encouraging the model to capture subtle changes along continuous transitions between real and generated images.</li>
+        <li>Comprehensive experiments demonstrate CuRe's strong generalization on diverse benchmarks and robustness to common post-processing, with consistent gains over binary training across multiple visual backbones.</li>
+      </ol>
     </section>
 
-    <section id="analysis" aria-labelledby="h-ana">
-      <h2 id="h-ana">Representation analysis</h2>
+    <section id="motivation" aria-labelledby="h-mot">
+      <h2 id="h-mot">Why does binary supervision invite shortcuts?</h2>
+      <p class="takeaway">Endpoint labels leave the backbone free to separate the training classes by semantics, format or generator artifacts.</p>
+      <div class="prose">
+        <p>Most current AIGI detectors build on pretrained visual backbones such as CLIP and DINOv3. However, these backbones are not designed for source authentication, and their representations tend to emphasize semantic content over authenticity cues. Binary fine-tuning provides only coarse endpoint supervision for adapting these representations, allowing the model to exploit semantic biases, format differences, or generator-specific artifacts that separate the training classes, which can impair robustness and cross-generator generalization.</p>
+        <p>Figure 2 shows that, after binary fine-tuning, the backbone remains highly sensitive to semantic content and exhibits stronger separation between JPEG quality levels. Such semantic and format biases may encourage the model to rely on shortcuts rather than differences between real and generated images for classification. Prior work mitigates these limitations through forensic-aware architectures, bias-controlled training data, and representation regularization. These approaches improve generalization, but most retain binary supervision for representation learning, and some rely on strong hand-crafted priors about which forensic cues to emphasize or which nuisance factors to suppress.</p>
+      </div>
       <figure>
-        <div class="plate narrow"><a href="img/representation.jpg" target="_blank" rel="noopener" aria-label="Open full-size image"><img src="img/representation.jpg" alt="t-SNE of frozen, binary-trained and Stage 1 features coloured by semantic class, JPEG format and authenticity." loading="lazy"></a></div>
+        <div class="plate narrow"><img class="zoomable" src="img/representation.jpg" alt="t-SNE of features from a frozen backbone, binary training and CuRe Stage 1, colored by semantic class, JPEG quality and authenticity." loading="lazy"></div>
         <figcaption><b class="n">Figure 2.</b> Representation analysis using PE Core L/14 on GenImage. Frozen and binary-trained features retain pronounced semantic structure, and binary training additionally separates the two JPEG qualities. In contrast, continuous source-change training yields greater mixing across semantic and format groups while producing clearer separation between real and generated samples.</figcaption>
       </figure>
+      <div class="prose" style="margin-top:1.4rem">
+        <p>Instead, we revisit this problem from the perspective of the training task. Coarse binary supervision provides limited guidance for adapting semantically oriented pretrained features to source authentication, leaving room for decisions based on shortcuts. We therefore introduce CuRe, which constructs continuous transitions between real and generated images through interpolation in pixel space and trains the backbone to predict the mixing ratio. This continuous regression task shifts backbone adaptation from learning a binary decision boundary to modeling continuous source responses. We then freeze the adapted backbone and extract a compact subspace, motivated by the hypothesis that transferable source responses can be captured in relatively few feature directions. By suppressing nuisance variation and restricting the final classifier to this subspace, we limit its access to potential shortcut cues.</p>
+      </div>
     </section>
 
     <section id="method" aria-labelledby="h-method">
       <h2 id="h-method">Method</h2>
+      <p class="takeaway">Stage 1 learns to regress how much of an image is generated; Stage 2 keeps only the directions that respond to that change.</p>
       <div class="prose">
         <p>As illustrated in Figure 3, CuRe consists of two training stages. Stage 1 adapts the encoder using our training objective to improve the model's ability to perceive authenticity-related cues. Subsequently, Stage 2 freezes the encoder from Stage 1 and constructs a useful subspace for classification.</p>
       </div>
       <figure>
-        <div class="plate"><a href="img/framework.jpg" target="_blank" rel="noopener" aria-label="Open full-size image"><img src="img/framework.jpg" alt="CuRe framework: Stage 1 continuous source learning with a ratio head; Stage 2 source-response subspace and linear classifier." loading="lazy"></a></div>
+        <div class="plate "><img class="zoomable" src="img/framework.jpg" alt="Overview of the CuRe framework: Stage 1 continuous source learning with a ratio head; Stage 2 source-response subspace and a linear classifier." loading="lazy"></div>
         <figcaption><b class="n">Figure 3.</b> Overview of the CuRe framework. Stage 1 (left) adapts the backbone with LoRA to predict the mixing ratio of real–generated image interpolations, encouraging sensitivity to continuous source changes. Stage 2 (upper right) uses the frozen adapted encoder and real–generated trajectories to extract a compact subspace that preserves source responses while suppressing content and mixing-related variation.</figcaption>
       </figure>
+
+      <h3>Stage 1 · Continuous source-sensitive representation learning</h3>
+      <div class="prose">
+        <p>Binary supervision distinguishes real and generated endpoints, but does not explicitly constrain how predictions should vary between them. To provide finer guidance for backbone adaptation, we reformulate the learning task as predicting the mixing ratio of real and generated images. We construct the training input by interpolating a real image <span class="m">x<sub>r</sub></span> and a generated image <span class="m">x<sub>g</sub></span>:</p>
+      </div>
+      <div class="eq"><img src="eq/mix.svg" alt="x_alpha = (1 - alpha) x_r + alpha x_g, alpha ~ U(0,1)" style="--w:308px" loading="lazy"></div>
+      <div class="prose">
+        <p>where each training pair receives one independently sampled mixing ratio as the prediction target. Varying this ratio defines a controlled path between the two source endpoints, allowing us to train the representation's response to graded source changes. This interpolation is not intended to reproduce the image generation process.</p>
+        <p>We sample real and generated endpoints independently at random, so learning covers diverse content combinations without requiring semantic matching. However, changes along these paths also include content variation, which we address as interference in Stage 2.</p>
+        <p>We use the vision tower of Perception Encoder Core L/14 (PE Core L/14) for its strong transferable visual features. We keep its pretrained parameters frozen and adapt the encoder with LoRA in this stage. Let <span class="m">f<sub>θ</sub></span> denote the encoder equipped with the learned LoRA updates. The feature of a mixed image is passed to a lightweight regression head <span class="m">g<sub>φ</sub></span> with a sigmoid output to predict the mixing ratio:</p>
+      </div>
+      <div class="eq"><img src="eq/pred.svg" alt="z_alpha = f_theta(x_alpha) in R^D, alpha-hat = g_phi(z_alpha)" style="--w:272px" loading="lazy"></div>
+      <div class="prose">
+        <p>For <span class="m">N</span> sampled pairs with independently drawn ratios <span class="m">α<sub>i</sub></span>, the training objective is</p>
+      </div>
+      <div class="eq"><img src="eq/ratio.svg" alt="L_ratio = (1/N) sum_i l_reg(g_phi(f_theta(x_(i,alpha_i))), alpha_i)" style="--w:284px" loading="lazy"></div>
+      <div class="prose">
+        <p>where <span class="m">ℓ<sub class='r'>reg</sub></span> is binary cross-entropy with the mixing ratio <span class="m">α<sub>i</sub></span> as a soft target. Predicting these continuous targets requires the model to distinguish intermediate mixtures and estimate the degree of mixing. This supervision therefore encourages the encoder to resolve graded source changes, providing finer guidance for backbone adaptation than endpoint labels alone. We jointly train the LoRA parameters and ratio head, then discard <span class="m">g<sub>φ</sub></span> and freeze the adapted encoder <span class="m">f<sub>θ</sub></span> for subsequent subspace extraction.</p>
+      </div>
+
+      <h3>Stage 2 · Interference-suppressed source-response subspace</h3>
+      <div class="prose">
+        <p>Stage 1 makes the representation sensitive to source changes, but the full feature space still contains content and mixing-related variation. We hypothesize that transferable source responses can be captured in a low-dimensional subspace. Based on this hypothesis, Stage 2 keeps the adapted encoder fixed and selects directions with strong source responses relative to nuisance variation. The final classifier then operates within this subspace. To estimate source and nuisance responses, we construct three controlled trajectory types <span class="m">T &#8712; {RF, RR, FF}</span>: real–generated, real–real, and generated–generated. For endpoints <span class="m">x<span class="ss"><span>T,<span class="r">0</span></span><span>i</span></span></span> and <span class="m">x<span class="ss"><span>T,<span class="r">1</span></span><span>i</span></span></span>, we define</p>
+      </div>
+      <div class="eq"><img src="eq/traj.svg" alt="x^T_(i,alpha) = (1-alpha) x_i^(T,0) + alpha x_i^(T,1), z^T_(i,alpha) = f_theta(x^T_(i,alpha))" style="--w:359px" loading="lazy"></div>
+      <div class="prose">
+        <p>Here, all trajectories use the fixed grid <span class="m">&#119964; = {<span class="r">0</span>, <span class="r">0.2</span>, <span class="r">0.4</span>, <span class="r">0.6</span>, <span class="r">0.8</span>, <span class="r">1.0</span>}</span> for subspace estimation. RF changes both source and content, whereas RR and FF mix images while keeping the source class fixed. The latter therefore provide controls for responses that do not require a real–generated transition. To compare these responses, we summarize each trajectory by its regression slope over <span class="m">α</span>, which captures the direction and magnitude of feature change:</p>
+      </div>
+      <div class="eq"><img src="eq/slope.svg" alt="b_i^T = sum (alpha - alpha-bar)(z - z-bar) / sum (alpha - alpha-bar)^2" style="--w:239px" loading="lazy"></div>
+      <div class="prose">
+        <p>where <span class="m">α&#772;</span> and <span class="m">z&#772;<span class="ss"><span>T</span><span>i</span></span></span> are the trajectory means. We then form three compact statistics:</p>
+      </div>
+      <div class="eq"><img src="eq/stats.svg" alt="C_F = E[b^RF b^RF^T], C_M = E[b^RR b^RR^T] + E[b^FF b^FF^T], C_S = Cov(z-bar^RF)" style="--w:309px" loading="lazy"></div>
+      <div class="prose">
+        <p><span class="m">C<sub>F</sub></span> measures RF responses, including source and nuisance effects, while <span class="m">C<sub>M</sub></span> estimates same-source mixing responses. Because all RF trajectories use the same ratio grid, they have the same mean mixing ratio. We therefore use the covariance <span class="m">C<sub>S</sub></span> of their mean features as a proxy for content variation across image pairs. We normalize each statistic by its trace, then select directions with strong RF responses relative to same-source mixing and cross-pair content variation:</p>
+      </div>
+      <div class="eq"><picture><source media="(max-width: 760px)" srcset="eq/rayleigh-m.svg"><img src="eq/rayleigh.svg" alt="max_w (w^T C_F w)/(w^T (lambda_s C_S + lambda_m C_M + eps I) w) &lt;=&gt; C_F w = gamma (lambda_s C_S + lambda_m C_M + eps I) w" style="--w:592px;--wm:318px" loading="lazy"></picture></div>
+      <div class="prose">
+        <p>where <span class="m">λ<sub>s</sub></span> and <span class="m">λ<sub>m</sub></span> control interference suppression and <span class="m">εI</span> ensures numerical stability. The eigenvectors associated with the <span class="m">k</span> largest generalized eigenvalues form</p>
+      </div>
+      <div class="eq"><img src="eq/basis.svg" alt="W = [w_1, ..., w_k] in R^(D x k)" style="--w:233px" loading="lazy"></div>
+      <div class="prose">
+        <p>We retain <span class="m">k = <span class="r">128</span></span> directions in the 1,024-dimensional feature space by default. Unlike PCA, we select directions by source response relative to interference, rather than total variance.</p>
+      </div>
+
+      <h3>Stage 3 · Subspace-constrained source classification</h3>
+      <div class="prose">
+        <p>Given an input image <span class="m">x</span>, the frozen adapted backbone extracts a <span class="m">D</span>-dimensional feature <span class="m">z</span>. We center and project it into the <span class="m">k</span>-dimensional source-response subspace, then apply a single linear layer to predict class probabilities via softmax:</p>
+      </div>
+      <div class="eq"><img src="eq/flow.svg" alt="x -&gt; z -&gt; u = W^T(z - mu) -&gt; l = A^T u + c -&gt; p = softmax(l)" style="--w:350px" loading="lazy"></div>
+      <div class="prose">
+        <p>Here, <span class="m">μ</span> is the mean RF trajectory feature estimated during subspace construction, and <span class="m">A</span> and <span class="m">c</span> denote the classifier weights and bias. During training, the encoder, including its Stage-1 LoRA parameters, and <span class="m">(μ, W)</span> remain frozen. We optimize only <span class="m">A</span> and <span class="m">c</span> using cross-entropy:</p>
+      </div>
+      <div class="eq"><img src="eq/cls.svg" alt="L_cls = -(1/N) sum_i log p_(i, y_i)" style="--w:179px" loading="lazy"></div>
+      <div class="prose">
+        <p>where <span class="m">y<sub>i</sub> = <span class="r">0</span></span> denotes a real image and <span class="m">y<sub>i</sub> = <span class="r">1</span></span> a generated image. The classifier's decision direction in the original feature space is restricted to <span class="m">span(W)</span>, limiting its access to potential shortcut cues in discarded feature directions.</p>
+      </div>
     </section>
 
-    <section id="results" aria-labelledby="h-res">
-      <h2 id="h-res">Results</h2>
+    <section id="experiments" aria-labelledby="h-exp">
+      <h2 id="h-exp">Experiments</h2>
+      <h3>Setup</h3>
+      <div class="prose">
+        <p><strong>Training configuration.</strong> We train CuRe exclusively on the Stable Diffusion v1.4 training subset of GenImage, which contains generated images and real images from the ImageNet classes. To remove format shortcuts, we re-encode the generated images as JPEG to match the real images, following the setting of DDA. We use the same training data and format alignment configuration for CuRe and all retrained comparison methods.</p>
+        <p><strong>Evaluation benchmarks.</strong> We evaluate on ten public benchmarks: AIGCDetectBenchmark, AIGIBench, UnivFakeDetect, EvalGEN, SynthWildX, WildRF, BFree-Online, RRDataset, RealChain, and Chameleon. These benchmarks cover diverse generators, most of which are unseen during training. For AIGIBench, we select the 20 subsets corresponding to full-image synthesis.</p>
+        <p><strong>Compared methods.</strong> We compare CuRe with NPR, UnivFD, FatFormer, C2P-CLIP, DRCT, SAFE, DDA, GAPL, and DGS-Net. We retrain NPR, UnivFD, FatFormer, and SAFE using the same paradigm as CuRe, while retaining their original architectures and recommended optimization settings. For the remaining methods, we use their officially released pretrained weights and recommended inference settings, as their specialized training datasets or multi-stage training pipelines are integral to their methods.</p>
+        <p><strong>Implementation details.</strong> We use PE Core L/14 at 336×336 resolution. In Stage 1, we fine-tune the backbone using LoRA on the query and value projections of every attention layer, with rank <span class="m">r = <span class="r">64</span></span> and scaling parameter <span class="m">α = <span class="r">128</span></span>. We optimize the LoRA parameters and ratio head for five epochs using AdamW with a learning rate of 1×10<sup>−5</sup>. In Stage 2, we estimate a subspace of dimension <span class="m">k = <span class="r">128</span></span> from 20,000 sampled endpoint pairs. We then freeze the adapted encoder and subspace and train only the linear classifier for five epochs using AdamW with a learning rate of 2×10<sup>−4</sup>.</p>
+      </div>
+
       <h3>Overall cross-benchmark generalization</h3>
+      <p class="takeaway">Trained on a single generator, CuRe leads the overall average by 5.2 points.</p>
       <div class="prose">
         <p>Table 1 compares CuRe with existing detectors on ten benchmarks, spanning both standard and in-the-wild evaluation settings. CuRe achieves the best Overall Avg. of 89.7%, outperforming DDA (84.5%) by 5.2%. On the challenging in-the-wild Chameleon benchmark and RealChain, which combines multiple image degradations, CuRe achieves 93.8% and 79.7% B.Acc., outperforming the second-best method by 10.9% and 11.8% respectively. These results indicate strong generalization to unseen generators and robustness to image degradations encountered in real-world scenarios.</p>
       </div>
-      <figure>
-        <div class="plate"><a href="img/table1.png" target="_blank" rel="noopener" aria-label="Open full-size table"><img src="img/table1.png" alt="Table 1: Overall comparison across AIGI detection benchmarks (balanced accuracy). CuRe (Ours) reaches 89.7% overall average." loading="lazy"></a></div>
-      </figure>
+      <div class="chart" id="chart-cure" data-chart>
+        <div class="chart-head"><span class="chart-title">Balanced accuracy (%) per method<span class="chart-sub">Higher is better. All methods are evaluated on the same ten public benchmarks.</span></span><label><span class="chart-sub" style="display:inline;margin-right:.4rem">Benchmark</span><select><option value="overall" selected>Overall average</option><option value="b0">AIGCDetect</option><option value="b1">AIGIBench</option><option value="b2">UnivFD</option><option value="b3">EvalGEN</option><option value="b4">SynthWildX</option><option value="b5">WildRF</option><option value="b6">BFree-On.</option><option value="b7">RRDataset</option><option value="b8">RealChain</option><option value="b9">Chameleon</option></select></label></div>
+        <div class="axis" aria-hidden="true"><span></span><span class="track"><span class="tick" style="left:0.00%">40</span><span class="tick" style="left:16.67%">50</span><span class="tick" style="left:33.33%">60</span><span class="tick" style="left:50.00%">70</span><span class="tick" style="left:66.67%">80</span><span class="tick" style="left:83.33%">90</span><span class="tick" style="left:100.00%">100</span></span><span></span></div>
+        <div class="row" data-name="NPR"><span class="name">NPR</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:28.00%" aria-label="NPR: 56.8"><span class="tip">NPR: 56.8</span></span></span><span class="val"></span></div><div class="row" data-name="UnivFD"><span class="name">UnivFD</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:43.50%" aria-label="UnivFD: 66.1"><span class="tip">UnivFD: 66.1</span></span></span><span class="val"></span></div><div class="row" data-name="FatFormer"><span class="name">FatFormer</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:27.33%" aria-label="FatFormer: 56.4"><span class="tip">FatFormer: 56.4</span></span></span><span class="val"></span></div><div class="row" data-name="C2P-CLIP"><span class="name">C2P-CLIP</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:37.33%" aria-label="C2P-CLIP: 62.4"><span class="tip">C2P-CLIP: 62.4</span></span></span><span class="val"></span></div><div class="row" data-name="DRCT"><span class="name">DRCT</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:48.33%" aria-label="DRCT: 69.0"><span class="tip">DRCT: 69.0</span></span></span><span class="val"></span></div><div class="row" data-name="SAFE"><span class="name">SAFE</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:37.33%" aria-label="SAFE: 62.4"><span class="tip">SAFE: 62.4</span></span></span><span class="val"></span></div><div class="row" data-name="DDA"><span class="name">DDA</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:74.17%" aria-label="DDA: 84.5"><span class="tip">DDA: 84.5</span></span></span><span class="val"></span></div><div class="row" data-name="GAPL"><span class="name">GAPL</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:71.00%" aria-label="GAPL: 82.6"><span class="tip">GAPL: 82.6</span></span></span><span class="val"></span></div><div class="row" data-name="DGS-Net"><span class="name">DGS-Net</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:28.83%" aria-label="DGS-Net: 57.3"><span class="tip">DGS-Net: 57.3</span></span></span><span class="val"></span></div><div class="row ours" data-name="CuRe (Ours)"><span class="name">CuRe (Ours)</span><span class="track"><span class="gl" style="left:0.00%"></span><span class="gl" style="left:16.67%"></span><span class="gl" style="left:33.33%"></span><span class="gl" style="left:50.00%"></span><span class="gl" style="left:66.67%"></span><span class="gl" style="left:83.33%"></span><span class="gl" style="left:100.00%"></span><span class="dot" tabindex="0" style="left:82.83%" aria-label="CuRe (Ours): 89.7"><span class="tip">CuRe (Ours): 89.7</span></span></span><span class="val">89.7</span></div>
+        <p class="chart-note">Axis starts at 40. Hover a dot for its value; exact numbers are in Table 1.</p>
+        <script type="application/json">{"lo": 40, "hi": 100, "ours": "CuRe (Ours)", "series": {"overall": {"NPR": 56.8, "UnivFD": 66.1, "FatFormer": 56.4, "C2P-CLIP": 62.4, "DRCT": 69.0, "SAFE": 62.4, "DDA": 84.5, "GAPL": 82.6, "DGS-Net": 57.3, "CuRe (Ours)": 89.7}, "b0": {"NPR": 63.5, "UnivFD": 67.4, "FatFormer": 61.3, "C2P-CLIP": 78.4, "DRCT": 68.3, "SAFE": 73.0, "DDA": 86.1, "GAPL": 96.2, "DGS-Net": 77.2, "CuRe (Ours)": 89.3}, "b1": {"NPR": 63.9, "UnivFD": 74.7, "FatFormer": 63.4, "C2P-CLIP": 69.6, "DRCT": 73.4, "SAFE": 60.2, "DDA": 85.0, "GAPL": 91.3, "DGS-Net": 60.1, "CuRe (Ours)": 92.8}, "b2": {"NPR": 53.5, "UnivFD": 50.8, "FatFormer": 52.6, "C2P-CLIP": 91.6, "DRCT": 56.7, "SAFE": 53.0, "DDA": 77.4, "GAPL": 95.2, "DGS-Net": 78.6, "CuRe (Ours)": 82.0}, "b3": {"NPR": 86.3, "UnivFD": 94.5, "FatFormer": 65.1, "C2P-CLIP": 66.4, "DRCT": 75.4, "SAFE": 92.8, "DDA": 97.9, "GAPL": 97.5, "DGS-Net": 53.0, "CuRe (Ours)": 98.1}, "b4": {"NPR": 47.4, "UnivFD": 61.6, "FatFormer": 52.6, "C2P-CLIP": 55.3, "DRCT": 74.6, "SAFE": 56.0, "DDA": 90.7, "GAPL": 86.4, "DGS-Net": 50.3, "CuRe (Ours)": 92.7}, "b5": {"NPR": 51.9, "UnivFD": 57.3, "FatFormer": 57.7, "C2P-CLIP": 59.5, "DRCT": 73.8, "SAFE": 58.5, "DDA": 90.5, "GAPL": 85.6, "DGS-Net": 53.6, "CuRe (Ours)": 95.8}, "b6": {"NPR": 46.7, "UnivFD": 64.9, "FatFormer": 60.7, "C2P-CLIP": 50.0, "DRCT": 73.8, "SAFE": 60.8, "DDA": 94.5, "GAPL": 67.3, "DGS-Net": 50.2, "CuRe (Ours)": 90.9}, "b7": {"NPR": 49.3, "UnivFD": 61.2, "FatFormer": 50.3, "C2P-CLIP": 52.7, "DRCT": 60.5, "SAFE": 59.3, "DDA": 71.6, "GAPL": 75.1, "DGS-Net": 50.0, "CuRe (Ours)": 81.5}, "b8": {"NPR": 50.7, "UnivFD": 66.1, "FatFormer": 50.0, "C2P-CLIP": 50.2, "DRCT": 64.9, "SAFE": 63.4, "DDA": 67.9, "GAPL": 62.8, "DGS-Net": 50.0, "CuRe (Ours)": 79.7}, "b9": {"NPR": 54.9, "UnivFD": 62.1, "FatFormer": 50.6, "C2P-CLIP": 50.7, "DRCT": 68.5, "SAFE": 46.7, "DDA": 82.9, "GAPL": 69.1, "DGS-Net": 50.2, "CuRe (Ours)": 93.8}}}</script>
+      </div>
+      <div class="tbl ">
+        <p class="cap"><b class="n">Table 1.</b> Overall comparison across AIGI detection benchmarks. All entries are in % and all accuracy values are balanced accuracy. Each benchmark score is the unweighted macro-average over its evaluated subsets when applicable. Best and second-best average results are marked in <strong>bold</strong> and <u>underlined</u>, respectively.</p>
+        <div class="scroll"><table class="dense">
+          <thead><tr class="grp"><th></th><th colspan="4">Standard benchmarks</th><th colspan="6" class="vsep">In-the-wild benchmarks</th><th class="vsep"></th></tr><tr><th>Method</th><th>AIGCDetect</th><th>AIGIBench</th><th>UnivFD</th><th>EvalGEN</th><th class=vsep>SynthWildX</th><th>WildRF</th><th>BFree-On.</th><th>RRDataset</th><th>RealChain</th><th>Chameleon</th><th class="vsep">Overall Avg.</th></tr></thead>
+          <tbody>
+            <tr><td>NPR<span class="venue-tag">CVPR'24</span></td><td>63.5</td><td>63.9</td><td>53.5</td><td>86.3</td><td class="vsep">47.4</td><td>51.9</td><td>46.7</td><td>49.3</td><td>50.7</td><td>54.9</td><td class="vsep">56.8</td></tr>
+            <tr><td>UnivFD<span class="venue-tag">CVPR'23</span></td><td>67.4</td><td>74.7</td><td>50.8</td><td>94.5</td><td class="vsep">61.6</td><td>57.3</td><td>64.9</td><td>61.2</td><td>66.1</td><td>62.1</td><td class="vsep">66.1</td></tr>
+            <tr><td>FatFormer<span class="venue-tag">CVPR'24</span></td><td>61.3</td><td>63.4</td><td>52.6</td><td>65.1</td><td class="vsep">52.6</td><td>57.7</td><td>60.7</td><td>50.3</td><td>50.0</td><td>50.6</td><td class="vsep">56.4</td></tr>
+            <tr><td>C2P-CLIP<span class="venue-tag">AAAI'25</span></td><td>78.4</td><td>69.6</td><td>91.6</td><td>66.4</td><td class="vsep">55.3</td><td>59.5</td><td>50.0</td><td>52.7</td><td>50.2</td><td>50.7</td><td class="vsep">62.4</td></tr>
+            <tr><td>DRCT<span class="venue-tag">ICML'24</span></td><td>68.3</td><td>73.4</td><td>56.7</td><td>75.4</td><td class="vsep">74.6</td><td>73.8</td><td>73.8</td><td>60.5</td><td>64.9</td><td>68.5</td><td class="vsep">69.0</td></tr>
+            <tr><td>SAFE<span class="venue-tag">KDD'25</span></td><td>73.0</td><td>60.2</td><td>53.0</td><td>92.8</td><td class="vsep">56.0</td><td>58.5</td><td>60.8</td><td>59.3</td><td>63.4</td><td>46.7</td><td class="vsep">62.4</td></tr>
+            <tr><td>DDA<span class="venue-tag">NeurIPS'25</span></td><td>86.1</td><td>85.0</td><td>77.4</td><td>97.9</td><td class="vsep">90.7</td><td>90.5</td><td>94.5</td><td>71.6</td><td>67.9</td><td>82.9</td><td class="vsep second">84.5</td></tr>
+            <tr><td>GAPL<span class="venue-tag">CVPR'26</span></td><td>96.2</td><td>91.3</td><td>95.2</td><td>97.5</td><td class="vsep">86.4</td><td>85.6</td><td>67.3</td><td>75.1</td><td>62.8</td><td>69.1</td><td class="vsep">82.6</td></tr>
+            <tr><td>DGS-Net<span class="venue-tag">ICML'26</span></td><td>77.2</td><td>60.1</td><td>78.6</td><td>53.0</td><td class="vsep">50.3</td><td>53.6</td><td>50.2</td><td>50.0</td><td>50.0</td><td>50.2</td><td class="vsep">57.3</td></tr>
+            <tr class="ours"><td>CuRe (Ours)</td><td>89.3</td><td>92.8</td><td>82.0</td><td>98.1</td><td class="vsep">92.7</td><td>95.8</td><td>90.9</td><td>81.5</td><td>79.7</td><td>93.8</td><td class="vsep best">89.7</td></tr>
+          </tbody>
+        </table></div>
+      </div>
 
-      <h3>Across backbones</h3>
+      <h3>Generalization across backbones and LoRA ranks</h3>
+      <p class="takeaway">Ratio supervision beats binary supervision in all twelve backbone and rank settings.</p>
+      <div class="prose">
+        <p>We test whether continuous source learning depends on a particular pretrained representation. We consider CLIP ViT-L/14, DINOv2 ViT-L/14, DINOv3 ViT-L/16, and PE Core L/14. For each backbone, we compare a conventional binary-supervised baseline with CuRe. We vary the LoRA rank over <span class="m">r &#8712; {<span class="r">16</span>, <span class="r">32</span>, <span class="r">64</span>}</span>. At each rank, the two methods use identical target modules, and we set <span class="m">α = <span class="r">2</span>r</span> to keep the LoRA scaling <span class="m">α/r</span> fixed. All variants use the same training data, preprocessing and model-selection protocol.</p>
+      </div>
       <figure>
-        <div class="plate"><img src="img/backbone_adaptation.png" alt="ROC-AUC of binary supervision versus CuRe on CLIP, DINOv2, DINOv3 and PE Core at LoRA ranks 16, 32 and 64." loading="lazy"></div>
-        <figcaption><b class="n">Figure 4.</b> Cross-backbone comparison under different LoRA ranks on AIGIBench. Within each backbone, paired bars compare binary supervision (blue) and continuous-ratio supervision (teal with diagonal hatching) at <i class="m">r</i> ∈ {16, 32, 64}. Bars report ROC-AUC.</figcaption>
+        <div class="plate "><img class="zoomable" src="img/backbone_adaptation.png" alt="ROC-AUC of binary supervision and CuRe on CLIP, DINOv2, DINOv3 and PE Core at LoRA ranks 16, 32 and 64." loading="lazy"></div>
+        <figcaption><b class="n">Figure 4.</b> Cross-backbone comparison under different LoRA ranks on AIGIBench. Within each backbone, paired bars compare binary supervision (blue) and continuous-ratio supervision (teal with diagonal hatching) at <span class="m">r &#8712; {<span class="r">16</span>, <span class="r">32</span>, <span class="r">64</span>}</span>. Bars report ROC-AUC.</figcaption>
       </figure>
+      <div class="prose" style="margin-top:1.4rem">
+        <p>Figure 4 provides a controlled test of both backbone generality and adaptation capacity. Ratio supervision outperforms the binary objective in all twelve settings, with AUC gains ranging from 2.7% to 9.3%. The improvement remains consistent across CLIP, DINOv2, DINOv3, and PE Core. These results demonstrate consistent generalization gains across visual backbones and LoRA ranks, supporting CuRe's effectiveness across model and adaptation configurations.</p>
+        <p>Moreover, continuous-ratio supervision benefits more reliably from increasing LoRA rank. Despite minor fluctuations, it achieves its strongest AUC at <span class="m">r = <span class="r">64</span></span> across all four backbones, whereas binary supervision often saturates or degrades as the rank increases. This trend suggests that CuRe more effectively guides and constrains representation learning, enabling more consistent gains as the LoRA rank increases and allowing the backbone to realize greater representational potential.</p>
+      </div>
 
       <h3>Ablation study</h3>
-      <figure>
-        <div class="plate"><a href="img/table4.png" target="_blank" rel="noopener" aria-label="Open full-size table" style="width:95%;margin:0 auto"><img src="img/table4.png" alt="Tables 4 and 5: Stage-1 and Stage-2 ablations on AIGIBench. Full CuRe reaches 92.6 B.Acc. and 97.5 AUC." loading="lazy"></a></div>
-      </figure>
+      <p class="takeaway">Both stages matter: ratio learning lifts B.Acc. by 9.6 points, and the subspace adds 2.8 more.</p>
+      <div class="prose">
+          <h4>Effect of Stage-1 learning</h4>
+          <p>Table 4 compares three detectors under a matched LoRA protocol. The classification baseline jointly trains LoRA and a binary head. Stage-1 Prediction (Direct) instead uses the continuous Stage-1 prediction <span class="m"><span class="hat">α</span></span> directly as the generated-image score, with the fixed threshold 0.5 for computing B.Acc. All variants use identical LoRA target modules, rank, optimizer, and training schedule.</p>
+          <p>The binary LoRA baseline achieves only 80.2% balanced accuracy and 89.2% ROC-AUC. Directly using the Stage-1 prediction improves these results to 89.8% and 97.2%, confirming that continuous source learning captures useful source information. Nevertheless, it remains 2.8% below the full CuRe in balanced accuracy, while the ROC-AUC gap is 0.3%. This suggests that the Stage-1 score already provides a meaningful ranking of real and generated images, but its raw prediction scale and fixed decision threshold are not yet optimal for classification.</p>
+          <h4>Effect of the source-response subspace</h4>
+          <p>Table 5 studies Stage 2 using the same fixed LoRA-adapted Stage-1 checkpoint within each seed. PCA-128 is a low-dimensional control, Full Feature bypasses subspace projection, and <span class="m">C<sub>M</sub> + C<sub>S</sub></span> retains the interference directions. The <span class="m">C<sub>F</sub></span> (CuRe) row denotes the proposed source-response subspace obtained by maximizing <span class="m">C<sub>F</sub></span> relative to <span class="m">C<sub>M</sub> + C<sub>S</sub></span>. All variants use the same linear-classifier protocol.</p>
+          <p>Retaining only the <span class="m">C<sub>M</sub> + C<sub>S</sub></span> directions gives the weakest performance, with 83.2% balanced accuracy and 85.8% ROC-AUC. The weak performance of this interference subspace indicates that directions dominated by ordinary mixing and content-related variation are insufficient for reliable source authentication. Training a classifier directly on the full feature reaches 89.7% balanced accuracy and 90.5% ROC-AUC, but remains 2.9% and 7.0% below CuRe, respectively. PCA-128 reaches 89.8% balanced accuracy and 91.1% ROC-AUC, performing similarly to Full Feature but remaining 2.8% and 6.4% below CuRe. CuRe achieves larger improvements by retaining directions sensitive to real–generated changes while suppressing nuisance variation.</p>
+      </div>
+      <div class="duo bare">
+        <div><div class="tbl ">
+        <p class="cap"><b class="n">Table 4.</b> Stage-1 ablation on AIGIBench (%, mean ± std over five seeds).</p>
+        <div class="scroll"><table class="">
+          <thead><tr><th>Setting</th><th>B.Acc. ↑</th><th>AUC ↑</th></tr></thead>
+          <tbody>
+            <tr><td>Binary Cls. (Baseline)</td><td>80.2 ± 0.6</td><td>89.2 ± 0.9</td></tr>
+            <tr><td>Stage-1 Prediction (Direct)</td><td>89.8 ± 0.3</td><td>97.2 ± 0.4</td></tr>
+            <tr class="ours"><td>Full Method (CuRe)</td><td class="best">92.6 ± 0.4</td><td class="best">97.5 ± 0.7</td></tr>
+          </tbody>
+        </table></div>
+      </div></div>
+        <div><div class="tbl ">
+        <p class="cap"><b class="n">Table 5.</b> Stage-2 ablation on AIGIBench (%, mean ± std over five seeds).</p>
+        <div class="scroll"><table class="">
+          <thead><tr><th>Representation</th><th>B.Acc. ↑</th><th>AUC ↑</th></tr></thead>
+          <tbody>
+            <tr><td>PCA-128</td><td>89.8 ± 0.9</td><td>91.1 ± 0.9</td></tr>
+            <tr><td>Full Feature</td><td>89.7 ± 0.4</td><td>90.5 ± 0.2</td></tr>
+            <tr><td><span class="m">C<sub>M</sub> + C<sub>S</sub></span></td><td>83.2 ± 1.1</td><td>85.8 ± 0.6</td></tr>
+            <tr class="ours"><td><span class="m">C<sub>F</sub></span> (CuRe)</td><td class="best">92.6 ± 0.4</td><td class="best">97.5 ± 0.7</td></tr>
+          </tbody>
+        </table></div>
+      </div></div>
+      </div>
 
-      <h3>Robustness</h3>
+      <h3>Robustness to common post-processing</h3>
+      <p class="takeaway">CuRe degrades only slightly under JPEG compression, resizing and blur.</p>
+      <div class="prose">
+        <p>We evaluate the robustness of CuRe and four strong competing methods selected from Table 1 on AIGIBench. We vary JPEG quality, bicubic resize scale, or Gaussian blur one at a time before method-specific preprocessing. Figure 5 shows that CuRe incurs only minor performance degradation across all tested perturbation types and severities. It achieves the best performance in most settings and demonstrates stronger overall robustness than all competing methods.</p>
+      </div>
       <figure>
-        <div class="plate"><img src="img/robustness.png" alt="Balanced accuracy of CuRe, GAPL, DDA, UnivFD and DRCT under JPEG compression, resizing and Gaussian blur." loading="lazy"></div>
+        <div class="plate "><img class="zoomable" src="img/robustness.png" alt="Balanced accuracy of CuRe, GAPL, DDA, UnivFD and DRCT on AIGIBench under JPEG compression, resizing and Gaussian blur." loading="lazy"></div>
         <figcaption><b class="n">Figure 5.</b> Robustness of CuRe and four strong comparison methods on AIGIBench (BAcc). Each panel varies one post-processing factor while holding the other two at their clean settings.</figcaption>
       </figure>
     </section>
 
+    <section id="conclusion" aria-labelledby="h-con">
+      <h2 id="h-con">Conclusion</h2>
+      <div class="prose">
+        <p>We introduced CuRe for generalizable AI-generated image detection by reconsidering the supervision used to adapt pretrained visual backbones. Rather than treating authenticity only as a binary endpoint decision, CuRe learns from continuous real-to-generated transitions, providing denser guidance that makes the representation more sensitive to source variation. The adapted backbone is then frozen, and a compact source-response subspace is extracted to preserve stable authenticity-related variation while suppressing semantic and other source-irrelevant factors. Restricting the final classifier to this subspace limits its access to nuisance directions in the full representation.</p>
+        <p>Across ten public benchmarks, CuRe shows strong generalization to unseen generators and different real-image domains, together with robust performance under common post-processing. Cross-backbone experiments consistently favor continuous supervision over binary classification, and controlled ablations verify the complementary contributions of continuous source learning and source-response subspace selection. These results demonstrate that enriching the supervision of source variation and constraining the classifier to stable source-responsive directions provide an effective basis for generalizable AIGI detection.</p>
+        <h4>Limitations and future work</h4>
+        <p>CuRe constructs continuous supervision through linear pixel-space interpolation between independently sampled real and generated images. These intermediate samples provide a controlled source-change path rather than a faithful approximation of the image-generation process, and some may deviate from the natural image manifold. Although the same-source controls in the second stage reduce the influence of ordinary mixing effects, future work could explore more realistic source transitions derived from latent interpolation, generation trajectories, or editing operations.</p>
+        <p>The present study primarily focuses on image-level detection of fully generated images. It does not explicitly localize partially generated regions or assess images containing mixtures of real and generated content. Extending continuous source-response learning to spatial representations may support partial-edit localization and more fine-grained authenticity assessment.</p>
+      </div>
+    </section>
+
+    <section id="code" aria-labelledby="h-code">
+      <h2 id="h-code">Code</h2>
+      <p class="prose repo">The <a href="https://github.com/manic-cui/CuRe">repository</a> ships an inference script and the trained CuRe adapter (about 25 MB), which holds the Stage-1 LoRA updates, the Stage-2 subspace and the linear head. The frozen PE Core L/14 backbone is downloaded from Hugging Face on first use.</p>
+      <div class="code"><button type="button" data-copy>Copy</button><pre><code>git clone https://github.com/manic-cui/CuRe.git
+cd CuRe
+pip install -r requirements.txt
+
+python infer.py --input image.jpg
+python infer.py --input images --recursive --batch-size 8</code></pre></div>
+    </section>
+
     <section id="bibtex" aria-labelledby="h-bib">
       <h2 id="h-bib">BibTeX</h2>
-      <div class="bib">
-        <button type="button" data-copy>Copy</button>
-        <pre><code>@article{cui2026cure,
+      <div class="code bib"><button type="button" data-copy>Copy</button><pre><code>@article{cui2026cure,
   title   = {Learning Continuous Source Responses for Generalizable {AI}-Generated Image Detection},
   author  = {Cui, Manni and Liu, Ruiqi and Yu, Zijian and Tan, Hao and Wei, Zibo and Wang, Zian and Qin, Ziheng and Zhu, Huijia and Wang, Weiqiang and Lan, Jun and Wu, Shu},
   journal = {arXiv preprint arXiv:2609.14316},
   year    = {2026}
-}</code></pre>
-      </div>
+}</code></pre></div>
     </section>
   </main>
 
   <footer>
     <a href="../../index.html">← Manni Cui</a>
-    <span>Figures and tables are reproduced from the paper.</span>
+    <span>Text, figures and tables are from the paper.</span>
   </footer>
+
+  <div class="lb" role="dialog" aria-modal="true" aria-label="Enlarged figure"><button type="button">Close</button><img alt=""></div>
+
   <script>
+  (function () {
+    // copy buttons
     document.querySelectorAll('[data-copy]').forEach(function (b) {
       b.addEventListener('click', function () {
         var t = b.parentElement.querySelector('code').innerText;
-        var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
-        if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () {});
+        if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () {
+          b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600);
+        });
       });
     });
+    // lightbox
+    var lb = document.querySelector('.lb'), lbi = lb.querySelector('img'), last = null;
+    function close() { lb.classList.remove('open'); if (last) last.focus(); }
+    document.querySelectorAll('img.zoomable').forEach(function (im) {
+      im.tabIndex = 0;
+      function open() { last = im; lbi.src = im.currentSrc || im.src; lbi.alt = im.alt; lb.classList.add('open'); lb.querySelector('button').focus(); }
+      im.addEventListener('click', open);
+      im.addEventListener('keydown', function (e) { if (e.key === 'Enter') open(); });
+    });
+    lb.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && lb.classList.contains('open')) close(); });
+    // dot charts
+    document.querySelectorAll('[data-chart]').forEach(function (c) {
+      var d = JSON.parse(c.querySelector('script').textContent);
+      function show(k) {
+        var s = d.series[k];
+        c.querySelectorAll('.row').forEach(function (r) {
+          var n = r.dataset.name, v = s[n], dot = r.querySelector('.dot');
+          dot.style.left = ((v - d.lo) / (d.hi - d.lo) * 100).toFixed(2) + '%';
+          dot.setAttribute('aria-label', n + ': ' + v);
+          dot.querySelector('.tip').textContent = n + ': ' + v;
+          if (n === d.ours) r.querySelector('.val').textContent = v;
+        });
+      }
+      c.querySelectorAll('.seg button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          c.querySelectorAll('.seg button').forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+          show(b.dataset.k);
+        });
+      });
+      var sel = c.querySelector('select');
+      if (sel) sel.addEventListener('change', function () { show(sel.value); });
+    });
+    // table of contents highlight
+    var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+    if ('IntersectionObserver' in window && links.length) {
+      var map = {};
+      links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) {
+          if (e.isIntersecting && map[e.target.id]) {
+            links.forEach(function (a) { a.classList.remove('on'); });
+            map[e.target.id].classList.add('on');
+          }
+        });
+      }, { rootMargin: '-35% 0px -60% 0px' });
+      Object.keys(map).forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+      window.addEventListener('scroll', function () {
+        if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) {
+          links.forEach(function (a) { a.classList.remove('on'); });
+          links[links.length - 1].classList.add('on');
+        }
+      }, { passive: true });
+    }
+  })();
   </script>
 </body>
 </html>
