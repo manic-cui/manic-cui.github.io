@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CuRe: Learning Continuous Source Responses</title>
+  <meta name="description" content="CuRe reformulates backbone adaptation as regression of real-generated mixing ratios and reaches 89.7% average balanced accuracy across ten public benchmarks.">
+  <meta property="og:title" content="Learning Continuous Source Responses for Generalizable AI-Generated Image Detection">
+  <meta property="og:description" content="CuRe reformulates backbone adaptation as regression of real-generated mixing ratios and reaches 89.7% average balanced accuracy across ten public benchmarks.">
+  <meta property="og:type" content="article">
+  <meta property="og:image" content="https://manic-cui.github.io/projects/cure/img/teaser.jpg">
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="back"><a href="../../index.html">← Manni Cui</a></nav>
+  <header class="paper">
+    <h1 class="paper-title">Learning Continuous Source Responses for Generalizable <span class="nw">AI-Generated</span> Image Detection</h1>
+    <p class="authors">
+        <span><a href="../../index.html">Manni Cui</a><sup>1,2</sup></span>
+        <span>Ruiqi Liu<sup>3</sup></span>
+        <span>Zijian Yu<sup>1</sup></span>
+        <span>Hao Tan<sup>3</sup></span>
+        <span>Zibo Wei<sup>2</sup></span>
+        <span>Zian Wang<sup>4</sup></span>
+        <span>Ziheng Qin<sup>3</sup></span>
+        <span>Huijia Zhu<sup>1</sup></span>
+        <span>Weiqiang Wang<sup>1</sup></span>
+        <span>Jun Lan<sup>1,†</sup></span>
+        <span>Shu Wu<sup>3,†</sup></span>
+    </p>
+    <p class="affils">
+        <span><sup>1</sup>Ant Group</span>
+        <span><sup>2</sup>Huazhong University of Science and Technology</span>
+        <span><sup>3</sup>Institute of Automation, Chinese Academy of Sciences</span>
+        <span><sup>4</sup>Jilin University</span>
+    </p>
+    <p class="notes"><span><sup>†</sup>Corresponding authors</span></p>
+    <p class="venue pre">arXiv preprint, 2026</p>
+    <ul class="buttons">
+      <li><a href="https://arxiv.org/pdf/2609.14316"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Paper</a></li>
+      <li><a href="https://arxiv.org/abs/2609.14316"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>arXiv</a></li>
+      <li><a href="https://github.com/manic-cui/CuRe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>Code</a></li>
+      <li><a href="#bibtex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h4v4H7zM7 11c0 3-1 5-3 6M15 7h4v4h-4zM15 11c0 3-1 5-3 6"/></svg>BibTeX</a></li>
+    </ul>
+  </header>
+
+  <main>
+    <section aria-label="Teaser">
+      <figure>
+        <div class="plate"><img src="img/teaser.jpg" alt="Binary supervision versus continuous source change: images blended from real (alpha = 0) to generated (alpha = 1)." loading="lazy"></div>
+        <figcaption><b class="n">Figure 1.</b> <strong>Comparison of binary and continuous source supervision.</strong> Left: binary labels provide only coarse endpoint supervision, allowing models to learn decision boundaries based on different shortcuts (dashed curves), potentially compromising robustness and generalization. Right: CuRe constructs continuous transitions from real (<i class="m">α</i> = 0) to generated (<i class="m">α</i> = 1) images and predicts the mixing ratio <i class="m">α</i>, providing finer-grained supervision that encourages the encoder to distinguish intermediate states and become more sensitive to changes in image authenticity.</figcaption>
+      </figure>
+    </section>
+
+    <section id="abstract" aria-labelledby="h-abs">
+      <h2 id="h-abs">Abstract</h2>
+      <div class="prose abstract">
+        <p>Advances in image generation have made synthetic images increasingly difficult to distinguish from real photographs, raising concerns about the trustworthiness of visual media. Existing AI-generated image detectors often perform well on in-domain data, but their robustness and cross-generator generalization remain limited. These limitations are commonly attributed to overfitting to shortcut cues. Although many methods seek to suppress shortcut learning, most retain binary classification as the training task without reconsidering how the task itself shapes the learned representations. We introduce <strong>CuRe</strong>, a framework for learning <strong>C</strong>ontinuous So<strong>u</strong>rce <strong>Re</strong>sponses that revisits authenticity detection from the perspective of the training task. CuRe reformulates backbone adaptation as regression of real–generated mixing ratios, providing finer supervision that encourages the model to capture authenticity-related variation beyond binary endpoint separation. We further select a compact source-response subspace to suppress nuisance variation and limit the final classifier's access to potential shortcut cues. Across ten public benchmarks, CuRe achieves an average balanced accuracy of 89.7%, exceeding the second-best method by 5.2%. Further experiments demonstrate consistent generalization gains across visual backbones and strong robustness to common image degradations. Code is available at <a href="https://github.com/manic-cui/CuRe">https://github.com/manic-cui/CuRe</a>.</p>
+      </div>
+    </section>
+
+    <section id="analysis" aria-labelledby="h-ana">
+      <h2 id="h-ana">Representation analysis</h2>
+      <figure>
+        <div class="plate narrow"><a href="img/representation.jpg" target="_blank" rel="noopener" aria-label="Open full-size image"><img src="img/representation.jpg" alt="t-SNE of frozen, binary-trained and Stage 1 features coloured by semantic class, JPEG format and authenticity." loading="lazy"></a></div>
+        <figcaption><b class="n">Figure 2.</b> Representation analysis using PE Core L/14 on GenImage. Frozen and binary-trained features retain pronounced semantic structure, and binary training additionally separates the two JPEG qualities. In contrast, continuous source-change training yields greater mixing across semantic and format groups while producing clearer separation between real and generated samples.</figcaption>
+      </figure>
+    </section>
+
+    <section id="method" aria-labelledby="h-method">
+      <h2 id="h-method">Method</h2>
+      <div class="prose">
+        <p>As illustrated in Figure 3, CuRe consists of two training stages. Stage 1 adapts the encoder using our training objective to improve the model's ability to perceive authenticity-related cues. Subsequently, Stage 2 freezes the encoder from Stage 1 and constructs a useful subspace for classification.</p>
+      </div>
+      <figure>
+        <div class="plate"><a href="img/framework.jpg" target="_blank" rel="noopener" aria-label="Open full-size image"><img src="img/framework.jpg" alt="CuRe framework: Stage 1 continuous source learning with a ratio head; Stage 2 source-response subspace and linear classifier." loading="lazy"></a></div>
+        <figcaption><b class="n">Figure 3.</b> Overview of the CuRe framework. Stage 1 (left) adapts the backbone with LoRA to predict the mixing ratio of real–generated image interpolations, encouraging sensitivity to continuous source changes. Stage 2 (upper right) uses the frozen adapted encoder and real–generated trajectories to extract a compact subspace that preserves source responses while suppressing content and mixing-related variation.</figcaption>
+      </figure>
+    </section>
+
+    <section id="results" aria-labelledby="h-res">
+      <h2 id="h-res">Results</h2>
+      <h3>Overall cross-benchmark generalization</h3>
+      <div class="prose">
+        <p>Table 1 compares CuRe with existing detectors on ten benchmarks, spanning both standard and in-the-wild evaluation settings. CuRe achieves the best Overall Avg. of 89.7%, outperforming DDA (84.5%) by 5.2%. On the challenging in-the-wild Chameleon benchmark and RealChain, which combines multiple image degradations, CuRe achieves 93.8% and 79.7% B.Acc., outperforming the second-best method by 10.9% and 11.8% respectively. These results indicate strong generalization to unseen generators and robustness to image degradations encountered in real-world scenarios.</p>
+      </div>
+      <figure>
+        <div class="plate"><a href="img/table1.png" target="_blank" rel="noopener" aria-label="Open full-size table"><img src="img/table1.png" alt="Table 1: Overall comparison across AIGI detection benchmarks (balanced accuracy). CuRe (Ours) reaches 89.7% overall average." loading="lazy"></a></div>
+      </figure>
+
+      <h3>Across backbones</h3>
+      <figure>
+        <div class="plate"><img src="img/backbone_adaptation.png" alt="ROC-AUC of binary supervision versus CuRe on CLIP, DINOv2, DINOv3 and PE Core at LoRA ranks 16, 32 and 64." loading="lazy"></div>
+        <figcaption><b class="n">Figure 4.</b> Cross-backbone comparison under different LoRA ranks on AIGIBench. Within each backbone, paired bars compare binary supervision (blue) and continuous-ratio supervision (teal with diagonal hatching) at <i class="m">r</i> ∈ {16, 32, 64}. Bars report ROC-AUC.</figcaption>
+      </figure>
+
+      <h3>Ablation study</h3>
+      <figure>
+        <div class="plate"><a href="img/table4.png" target="_blank" rel="noopener" aria-label="Open full-size table" style="width:95%;margin:0 auto"><img src="img/table4.png" alt="Tables 4 and 5: Stage-1 and Stage-2 ablations on AIGIBench. Full CuRe reaches 92.6 B.Acc. and 97.5 AUC." loading="lazy"></a></div>
+      </figure>
+
+      <h3>Robustness</h3>
+      <figure>
+        <div class="plate"><img src="img/robustness.png" alt="Balanced accuracy of CuRe, GAPL, DDA, UnivFD and DRCT under JPEG compression, resizing and Gaussian blur." loading="lazy"></div>
+        <figcaption><b class="n">Figure 5.</b> Robustness of CuRe and four strong comparison methods on AIGIBench (BAcc). Each panel varies one post-processing factor while holding the other two at their clean settings.</figcaption>
+      </figure>
+    </section>
+
+    <section id="bibtex" aria-labelledby="h-bib">
+      <h2 id="h-bib">BibTeX</h2>
+      <div class="bib">
+        <button type="button" data-copy>Copy</button>
+        <pre><code>@article{cui2026cure,
+  title   = {Learning Continuous Source Responses for Generalizable {AI}-Generated Image Detection},
+  author  = {Cui, Manni and Liu, Ruiqi and Yu, Zijian and Tan, Hao and Wei, Zibo and Wang, Zian and Qin, Ziheng and Zhu, Huijia and Wang, Weiqiang and Lan, Jun and Wu, Shu},
+  journal = {arXiv preprint arXiv:2609.14316},
+  year    = {2026}
+}</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <a href="../../index.html">← Manni Cui</a>
+    <span>Figures and tables are reproduced from the paper.</span>
+  </footer>
+  <script>
+    document.querySelectorAll('[data-copy]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var t = b.parentElement.querySelector('code').innerText;
+        var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+        if (navigator.clipboard) navigator.clipboard.writeText(t).then(done, function () {});
+      });
+    });
+  </script>
+</body>
+</html>
